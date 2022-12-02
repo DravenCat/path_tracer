@@ -12,18 +12,18 @@
 /*****************************************************************************
 * COMPLETE THIS TEXT BOX:
 *
-* 1) Student Name:  Zhou Xiaohan 
-* 2) Student Name:  Hu Yuxuan
+* 1) Student Name: Dezhi Ren
+* 2) Student Name:
 *
-* 1) Student number:  1000763836
-* 2) Student number:  1000351460 
+* 1) Student number: 1005736795
+* 2) Student number:
 *
-* 1) UtorID  zhouxi47
-* 2) UtorID  huyuxuan
+* 1) UtorID rendezhi
+* 2) UtorID
 *
 * We hereby certify that the work contained here is our own
 *
-* ______ZhouXiaoHan_____             ______huyuxuanKevin_________
+* ___Ren, Dezhi_____             _____________________
 * (sign with your name)            (sign with your name)
 ********************************************************************************/
 

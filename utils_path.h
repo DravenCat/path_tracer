@@ -257,5 +257,5 @@ void deleteImage(struct image *im);
 // need to do your own clean-up wherever you have requested new rays, or used the
 // rayPosition() function which creates a new point3D structure!
 void cleanup(struct object3D *o_list, struct textureNode *t_list);
-
+double drand48(void);
 #endif
