@@ -287,8 +287,8 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 }
 
                 if (type == 2) {
-                    double r_idx1 = ray->goInside ? 1.0 : obj->r_index;
-                    double r_idx2 = ray->goInside ? obj->r_index : 1.0;
+                    double r_idx1 = ray->insideOut ? 1.0 : obj->r_index;
+                    double r_idx2 = ray->insideOut ? obj->r_index : 1.0;
                     double r0 = pow((r_idx1 - r_idx2) / (r_idx1 + r_idx2), 2);
 
                     double cos_theta1 = -dot(&ray->d, &n);
@@ -310,14 +310,14 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         de.py = temp1 * ray->d.py + temp3 * n.py;
                         de.pz = temp1 * ray->d.pz + temp3 * n.pz;
 
-                        ray->goInside = 1 - ray->goInside;
+                        ray->insideOut = 1 - ray->insideOut;
                     }
                 }
 
                 normalize(&de);
                 struct ray3D *ray_reflect = newRay(&p, &de);
                 ray_reflect->srcN = n;
-                ray_reflect->goInside = ray->goInside;
+                ray_reflect->insideOut = ray->insideOut;
 
                 ray_reflect->R = ray->R;
                 ray_reflect->G = ray->G;

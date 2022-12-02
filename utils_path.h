@@ -21,6 +21,8 @@
 #ifndef __utils_header
 #define __utils_header
 
+#define min(A, B) ((A)<(B)?(A):(B))
+
 // Functions to apply transformations to objects.
 // If you add any transformations to the list below, document them carefully
 inline void matMult(double A[4][4], double B[4][4]) {
@@ -138,6 +140,8 @@ inline double length(struct point3D *a) {
 // Functions to instantiate primitives
 struct point3D *newPoint(double px, double py, double pz);
 
+struct ray3D *newRay(struct point3D *p0, struct point3D *d);
+
 // Ray management inlines
 inline void rayPosition(struct ray3D *ray, double lambda, struct point3D *pos) {
     // Compute and return 3D position corresponding to a given lambda
@@ -148,30 +152,25 @@ inline void rayPosition(struct ray3D *ray, double lambda, struct point3D *pos) {
     pos->pw = 1;
 }
 
-inline struct ray3D *newRay(struct point3D *p0, struct point3D *d) {
+inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d, unsigned char insideOut) {
     // Allocate a new ray structure and initialize it to the values
     // given by p0 and d. Note that this function DOES NOT normalize
     // d to be a unit vector.
 
-    struct ray3D *ray = (struct ray3D *) calloc(1, sizeof(struct ray3D));
-    if (!ray) fprintf(stderr, "Out of memory allocating ray structure!\n");
-    else {
-        memcpy(&ray->p0, p0, sizeof(struct point3D));
-        memcpy(&ray->d, d, sizeof(struct point3D));
-        ray->rayPos = &rayPosition;
-        ray->R = 1.0;
-        ray->G = 1.0;
-        ray->B = 1.0;
-        ray->Ir = 0;
-        ray->Ig = 0;
-        ray->Ib = 0;
-        ray->srcN.px = 0;
-        ray->srcN.py = 0;
-        ray->srcN.pz = 1;
-        ray->srcN.pw = 1;
-        ray->goInside = 1;
-    }
-    return (ray);
+    memcpy(&ray->p0, p0, sizeof(struct point3D));
+    memcpy(&ray->d, d, sizeof(struct point3D));
+    ray->rayPos = &rayPosition;
+    ray->insideOut = insideOut;
+    ray->R = 1.0;
+    ray->G = 1.0;
+    ray->B = 1.0;
+    ray->Ir = 0;
+    ray->Ig = 0;
+    ray->Ib = 0;
+    ray->srcN.px = 0;
+    ray->srcN.py = 0;
+    ray->srcN.pz = 1;
+    ray->srcN.pw = 1;
 }
 
 // Ray and normal transformations to enable the use of canonical intersection tests with transformed objects
@@ -203,6 +202,15 @@ void planeSample(struct object3D *plane, double *x, double *y, double *z);
 void sphereSample(struct object3D *plane, double *x, double *y, double *z);
 
 void cylSample(struct object3D *plane, double *x, double *y, double *z);
+
+// Return Ls normal which faces image plane
+void planeSampleRay(struct object3D *plane, struct ray3D *ray);
+
+void sphereSampleRay(struct object3D *sphere, struct ray3D *ray);
+
+void cylinderSampleRay(struct object3D *cylinder, struct ray3D *ray);
+
+void getRandomDirection(struct point3D *rand_d);
 
 // Importance Sampling for BRDF of diffuse surfaces
 void cosWeightedSample(struct point3D *n, struct point3D *d);
@@ -257,5 +265,7 @@ void deleteImage(struct image *im);
 // need to do your own clean-up wherever you have requested new rays, or used the
 // rayPosition() function which creates a new point3D structure!
 void cleanup(struct object3D *o_list, struct textureNode *t_list);
+
 double drand48(void);
+
 #endif
