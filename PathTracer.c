@@ -186,7 +186,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         current = current->next;
                     }
 
-                    // fprintf(stderr, "id: %d\n", currentLS->LSidx);
+                    // fprintf(stderr, "id: %d\n", currentLS->LSpointer);
                     double lsx, lsy, lsz;
                     (currentLS->randomPoint)(currentLS, &lsx, &lsy, &lsz);
 
@@ -207,7 +207,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         free(r_pl);
 
                         if (temp_obj == currentLS) {
-                            CEL = currentLS->LSidx;
+                            CEL = currentLS->LSpointer;
 
                             // hit the light source
                             double weight = 2 * PI * currentLS->LSweight * dot(&n, &d_pls) * -dot(&n1, &d_pls) /
@@ -217,7 +217,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                             ray->Ig += ray->G * currentLS->col.G * weight;
                             ray->Ib += ray->B * currentLS->col.B * weight;
                         } else if (temp_obj->tranPct <= drand48()) {
-                            CEL = currentLS->LSidx;
+                            CEL = currentLS->LSpointer;
                         }
                     }
 
@@ -337,7 +337,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 //hit the lightsource
                 //At this point, multiply the ray colour by the lightsource colour and return
 #ifdef __USE_ES
-                if (CEL != obj->LSidx) {
+                if (CEL != obj->LSpointer) {
                     // the explicit light ray from the current call hit the lightsource
                     ray->Ir += ray->R * R;
                     ray->Ig += ray->G * G;
@@ -497,7 +497,7 @@ int main(int argc, char *argv[]) {
         if (obj->isLightSource) {
             obj->LSweight /= pct;
             LS_NUM += 1;
-            obj->LSidx = LS_NUM;
+            obj->LSpointer = LS_NUM;
         }
         obj = obj->next;
     }
