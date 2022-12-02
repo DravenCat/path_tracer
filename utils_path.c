@@ -55,6 +55,16 @@ struct point3D *newPoint(double px, double py, double pz) {
     return (pt);
 }
 
+// return a new ray starting at p0 and has direction d
+struct ray3D *newRay(struct point3D *p0, struct point3D *d) {
+    struct ray3D *ray = (struct ray3D *) calloc(1, sizeof(struct ray3D));
+    if (!ray) fprintf(stderr, "Out of memory allocating ray structure!\n");
+    else {
+        initRay(ray, p0, d, 1);
+    }
+    return (ray);
+}
+
 
 /////////////////////////////////////////////
 // Ray and normal transforms
@@ -66,15 +76,15 @@ inline void rayTransform(struct ray3D *ray_orig, struct ray3D *ray_transformed, 
     ///////////////////////////////////////////
     // TO DO: Complete this function
     ///////////////////////////////////////////
-    memcpy(ray_transformed, ray_orig, sizeof(struct ray3D));
-
-    // transfer ray->p0 to canonical object
+    // a' = A^-1*(a-t)
+    initRay(ray_transformed, &ray_orig->p0, &ray_orig->d, ray_orig->insideOut);
     matVecMult(obj->Tinv, &ray_transformed->p0);
 
-    // transfer ray->d to canonical object
-    ray_transformed->d.pw = 0;
+    // d' = A^-1*d
+    if (ray_transformed->d.pw != 0) {
+        ray_transformed->d.pw = 0;
+    }
     matVecMult(obj->Tinv, &ray_transformed->d);
-
     ray_transformed->d.pw = 1;
 }
 
@@ -87,19 +97,20 @@ inline void normalTransform(struct point3D *n_orig, struct point3D *n_transforme
     // TO DO: Complete this function
     ///////////////////////////////////////////
     memcpy(n_transformed, n_orig, sizeof(struct point3D));
-
-    double At[4][4];
+    // get A^T
+    double Tinv_T[4][4];
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            At[i][j] = obj->Tinv[j][i];
+            Tinv_T[i][j] = obj->Tinv[j][i];
         }
     }
-
-    // transfer from canonical object back to the specific object
-    n_transformed->pw = 0;
-    matVecMult(At, n_transformed);
-    normalize(n_transformed);
+    // n = A^-T * n'
+    if (n_transformed->pw != 0) {
+        n_transformed->pw = 0;
+    }
+    matVecMult(Tinv_T, n_transformed);
     n_transformed->pw = 1;
+    normalize(n_transformed);
 }
 
 /////////////////////////////////////////////
@@ -1507,29 +1518,59 @@ void cleanup(struct object3D *o_list, struct textureNode *t_list) {
     }
 }
 
-struct ray3D *newRay(struct point3D *p0, struct point3D *d) {
-    // Allocate a new ray structure and initialize it to the values
-    // given by p0 and d. Note that this function DOES NOT normalize
-    // d to be a unit vector.
-
-    struct ray3D *ray = (struct ray3D *) calloc(1, sizeof(struct ray3D));
-    if (!ray) fprintf(stderr, "Out of memory allocating ray structure!\n");
-    else {
-        memcpy(&ray->p0, p0, sizeof(struct point3D));
-        memcpy(&ray->d, d, sizeof(struct point3D));
-        ray->rayPos = &rayPosition;
-        ray->R = 1.0;
-        ray->G = 1.0;
-        ray->B = 1.0;
-        ray->Ir = 0;
-        ray->Ig = 0;
-        ray->Ib = 0;
-        ray->srcN.px = 0;
-        ray->srcN.py = 0;
-        ray->srcN.pz = 1;
-        ray->srcN.pw = 1;
-        ray->insideOut = 1;
+// map the rgb color to the coordinate of the normal
+void rgb_to_coord(struct point3D *model, struct object3D *obj, double a, double b) {
+    // rgb is in range [0, 1] and normal is in range [-1, 1]
+    // x|y|z = 2*R|G|B - 1
+    double trans_matrix[4][4];
+    memcpy(trans_matrix, eye4x4, 16 * sizeof(double));
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            if (i == j) trans_matrix[i][j] = 2;
+            else if (j == 3) trans_matrix[i][j] = -1;
+        }
     }
-    return (ray);
+
+    obj->textureMap(obj->normalMap, a, b, &model->px, &model->py, &model->pz);
+    matVecMult(trans_matrix, model);
 }
 
+// transform the normals into model space
+void tbn_transform(struct point3D *n, struct point3D *tangent, struct point3D *model) {
+    struct point3D *binormal = cross(tangent, n);
+    double TBN[4][4] = {{tangent->px, binormal->px, n->px, 0},
+                        {tangent->py, binormal->py, n->py, 0},
+                        {tangent->pz, binormal->pz, n->pz, 0},
+                        {0,           0,            0,     1}};
+    matVecMult(TBN, model);
+    normalize(model);
+    free(binormal);
+}
+
+struct ray3D *getRefractedRay(struct ray3D *ray, struct point3D *n, struct object3D *obj, struct point3D *p) {
+    // the ray hits a refracting object.
+    double r_idx1 = ray->insideOut ? 1.0 : obj->r_index;
+    double r_idx2 = ray->insideOut ? obj->r_index : 1.0;
+    double cos_theta1 = dot(&ray->d, n);
+    double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
+    // r1 sin_theta1 = r2 sin_theta2
+    double sin_theta2 = (double) (r_idx1 / r_idx2) * sin_theta1;
+
+    // not in total reflection
+    if (sin_theta2 < 1 && sin_theta2 > 0) {
+        double n21 = r_idx1 / r_idx2;
+        double dot_product = -dot(n, &ray->d);
+        double tmp = sqrt(1 - n21 * n21 * (1 - dot_product * dot_product));
+
+        struct point3D *refract_d = newPoint(n21 * (dot_product * n->px + ray->d.px) - tmp * n->px,
+                                             n21 * (dot_product * n->py + ray->d.py) - tmp * n->py,
+                                             n21 * (dot_product * n->pz + ray->d.pz) - tmp * n->pz);
+        normalize(refract_d);
+        struct ray3D *refract_ray = newRay(p, refract_d);
+        refract_ray->insideOut = 1 - ray->insideOut;
+        free(refract_d);
+        return refract_ray;
+
+    }
+    return NULL;
+}
