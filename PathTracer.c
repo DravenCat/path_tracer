@@ -32,8 +32,9 @@
 ********************************************************************************/
 
 #include "utils_path.h"            // <-- This includes PathTracer.h
-#define __USE_IS			// Use importance sampling for diffuse materials
-#define __USE_ES			// Use explicit light sampling
+
+#define __USE_IS            // Use importance sampling for diffuse materials
+#define __USE_ES            // Use explicit light sampling
 // #define __DEBUG			// <-- Use this to turn on/off debugging output
 
 // A couple of global structures and data: An object list, a light list, and the
@@ -72,7 +73,7 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     struct point3D n_res;
     double a_res, b_res;
     (ray->rayPos)(ray, .000001, &ray->p0);
-    
+
     struct object3D *currentObj = object_list;
     while (currentObj) {
 // ignore self-intersections and for rays originating at the center of projection
@@ -118,23 +119,22 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 
     double max_num = max(ray->R, ray->G);
     max_num = max(max_num, ray->B);
-    dice = 0.5*drand48();
+    dice = 0.5 * drand48();
     //!!!
     // dice = drand48();
     //double temp_double = (1 - (ray->R + ray->G + ray->B)/3) / MAX_DEPTH; // roll dice to kill
     // Max recursion depth reached. Return black (no light coming into pixel from this path).
     // or not pass Russian Roulette check
-    if (max_num < dice || depth > MAX_DEPTH)
-    {
-        #ifdef __USE_ES
-        col->R=ray->Ir;	// These are accumulators, initialized at 0. Whenever we find a source of light these
-        col->G=ray->Ig;	// get incremented accordingly. At the end of the recursion, we return whatever light
-        col->B=ray->Ib;	// we accumulated into these three values.
-      #else
+    if (max_num < dice || depth > MAX_DEPTH) {
+#ifdef __USE_ES
+        col->R = ray->Ir;    // These are accumulators, initialized at 0. Whenever we find a source of light these
+        col->G = ray->Ig;    // get incremented accordingly. At the end of the recursion, we return whatever light
+        col->B = ray->Ib;    // we accumulated into these three values.
+#else
         col->R = 0;
         col->G = 0;
         col->B = 0;
-      #endif
+#endif
         return;
     } else {
         ///////////////////////////////////////////////////////
@@ -145,25 +145,24 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 
         if (lambda > 0) {
             if (obj->texImg) {
-                obj->textureMap(obj->texImg,a,b,&R,&G,&B);
+                obj->textureMap(obj->texImg, a, b, &R, &G, &B);
                 //!!!
                 R *= obj->col.R;
                 G *= obj->col.G;
                 B *= obj->col.B;
-              } else {
+            } else {
                 R = obj->col.R;
                 G = obj->col.G;
                 B = obj->col.B;
-              }
+            }
 
             if (!obj->isLightSource) {
-            
+
                 dice = drand48();
                 // type 0 - reflection; type 1 - diffusion; type 2 - refracion
-                double type = dice < obj->tranPct ? 2: -1;
-                if(type == -1)
-                {
-                    type = dice < obj->diffPct/(obj->diffPct + obj->reflPct) ? 1 : 0;
+                double type = dice < obj->tranPct ? 2 : -1;
+                if (type == -1) {
+                    type = dice < obj->diffPct / (obj->diffPct + obj->reflPct) ? 1 : 0;
                 }
 
                 struct point3D de;
@@ -171,17 +170,15 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 ray->G *= G;
                 ray->B *= B;
 
-                if (type == 1) {      
+                if (type == 1) {
                     // diffusion
-                    #ifdef __USE_ES
+#ifdef __USE_ES
                     dice = LS_NUM * drand48();
                     double idx = 0;
-                    struct object3D *current = object_list;             
+                    struct object3D *current = object_list;
                     struct object3D *currentLS = current;
-                    while(idx < dice)
-                    {
-                        if(current->isLightSource)
-                        {
+                    while (idx < dice) {
+                        if (current->isLightSource) {
                             currentLS = current;
                             idx += 1;
                         }
@@ -199,9 +196,8 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     d_pls.py = lsy - p.py;
                     d_pls.pz = lsz - p.pz;
                     normalize(&d_pls);
-                    
-                    if(dot(&d_pls, &n) > 0)
-                    {                               
+
+                    if (dot(&d_pls, &n) > 0) {
                         double lambda_pl;
                         double a1, b1;
                         struct object3D *temp_obj;
@@ -209,33 +205,32 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         struct ray3D *r_pl = newRay(&p, &d_pls);
                         findFirstHit(r_pl, &lambda_pl, NULL, &temp_obj, &p1, &n1, &a1, &b1);
                         free(r_pl);
-    
-                        if ( temp_obj == currentLS) {
-                            CEL = currentLS->LSidx;                        
-                            
+
+                        if (temp_obj == currentLS) {
+                            CEL = currentLS->LSidx;
+
                             // hit the light source
-                            double weight = 2*PI*currentLS->LSweight*dot(&n, &d_pls)*-dot(&n1, &d_pls)/pow(lambda_pl, 2);
+                            double weight = 2 * PI * currentLS->LSweight * dot(&n, &d_pls) * -dot(&n1, &d_pls) /
+                                            pow(lambda_pl, 2);
                             weight = weight > 1 ? 1 : weight;
-                            ray->Ir += ray->R * currentLS->col.R*weight;
-                            ray->Ig += ray->G * currentLS->col.G*weight;
-                            ray->Ib += ray->B * currentLS->col.B*weight;
-                        }
-                        else if(temp_obj->tranPct <= drand48())
-                        {
-                            CEL = currentLS->LSidx;                        
+                            ray->Ir += ray->R * currentLS->col.R * weight;
+                            ray->Ig += ray->G * currentLS->col.G * weight;
+                            ray->Ib += ray->B * currentLS->col.B * weight;
+                        } else if (temp_obj->tranPct <= drand48()) {
+                            CEL = currentLS->LSidx;
                         }
                     }
-                    
-                    #endif
-                    
-                    #ifdef __USE_IS
+
+#endif
+
+#ifdef __USE_IS
                     cosWeightedSample(&n, &de);
                     if (dot(&n, &de) < 0) {
                         de.px *= -1;
                         de.py *= -1;
                         de.pz *= -1;
                     }
-                    #else
+#else
                     // random point on the hemisphere around pi
                     double a = (double)2 * PI * drand48();
                     double b = (double)(PI * drand48()) - PI / 2;
@@ -244,7 +239,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     de.px = temp * cos(a); 
                     de.py = temp * sin(a); 
                     de.pz=u;
-                    #endif
+#endif
 
                     double dot_res = dot(&n, &de);
                     if (dot_res < 0) {
@@ -258,8 +253,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     ray->G *= dot_res;
                     ray->B *= dot_res;
 
-                } 
-                else{                
+                } else {
                     // reflection happens on both type 0 and type 2
                     // perfect reflect direction
                     double dot_nd = dot(&n, &ray->d);
@@ -282,46 +276,41 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     // fuzzy reflect
                     // reference https://en.wikipedia.org/wiki/Normal_distribution
                     struct point3D rand_p;
-                    rand_p.px = exp(1)*drand48() * cos(2*PI*drand48())*obj->refl_sig;
-                    rand_p.py = exp(1)*drand48() * cos(2*PI*drand48())*obj->refl_sig;
-                    rand_p.pz = exp(1)*drand48() * cos(2*PI*drand48())*obj->refl_sig;
-                    if (dot(&rand_p, &de) >= 0)
-                    {
+                    rand_p.px = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
+                    rand_p.py = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
+                    rand_p.pz = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
+                    if (dot(&rand_p, &de) >= 0) {
                         addVectors(&rand_p, &de);
-                    }
-                    else
-                    {
+                    } else {
                         subVectors(&rand_p, &de);
                     }
                 }
-                
-                if(type == 2)
-                {                
+
+                if (type == 2) {
                     double r_idx1 = ray->goInside ? 1.0 : obj->r_index;
                     double r_idx2 = ray->goInside ? obj->r_index : 1.0;
-                    double  r0 = pow((r_idx1 - r_idx2) / (r_idx1 + r_idx2), 2);
+                    double r0 = pow((r_idx1 - r_idx2) / (r_idx1 + r_idx2), 2);
 
                     double cos_theta1 = -dot(&ray->d, &n);
                     double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
                     double sin_theta2 = (double) (r_idx1 / r_idx2) * sin_theta1;
 
                     // gives the amount Rs of reflected light
-                    double reflected_light = r0 + (1-r0)*pow((1-cos_theta1), 5);
+                    double reflected_light = r0 + (1 - r0) * pow((1 - cos_theta1), 5);
                     double refracted_light = 1.0 - reflected_light;
 
 
                     dice = drand48();
-                    if(dice > reflected_light && sin_theta2 < 1 && sin_theta2 > 0)
-                    {
+                    if (dice > reflected_light && sin_theta2 < 1 && sin_theta2 > 0) {
                         double temp1 = r_idx1 / r_idx2;
                         double temp2 = -dot(&n, &ray->d);
-                         double temp3 = temp1 * temp2 - sqrt(1 - temp1 * temp1 * (1 - temp2 * temp2));
+                        double temp3 = temp1 * temp2 - sqrt(1 - temp1 * temp1 * (1 - temp2 * temp2));
 
                         de.px = temp1 * ray->d.px + temp3 * n.px;
                         de.py = temp1 * ray->d.py + temp3 * n.py;
                         de.pz = temp1 * ray->d.pz + temp3 * n.pz;
 
-                         ray->goInside = 1 - ray->goInside;
+                        ray->goInside = 1 - ray->goInside;
                     }
                 }
 
@@ -333,13 +322,13 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 ray_reflect->R = ray->R;
                 ray_reflect->G = ray->G;
                 ray_reflect->B = ray->B;
-                #ifdef __USE_ES
+#ifdef __USE_ES
                 ray_reflect->Ir = ray->Ir;
                 ray_reflect->Ig = ray->Ig;
                 ray_reflect->Ib = ray->Ib;
-                #endif
+#endif
 
-                obj = type == 2? NULL : obj;
+                obj = type == 2 ? NULL : obj;
                 PathTrace(ray_reflect, depth + 1, col, obj, CEL);
 
                 free(ray_reflect);
@@ -347,34 +336,33 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             } else {
                 //hit the lightsource
                 //At this point, multiply the ray colour by the lightsource colour and return
-                #ifdef __USE_ES
-                if(CEL != obj->LSidx)
-                {
-                // the explicit light ray from the current call hit the lightsource
-                ray->Ir += ray->R * R;
-                ray->Ig += ray->G * G;
-                ray->Ib += ray->B * B;
+#ifdef __USE_ES
+                if (CEL != obj->LSidx) {
+                    // the explicit light ray from the current call hit the lightsource
+                    ray->Ir += ray->R * R;
+                    ray->Ig += ray->G * G;
+                    ray->Ib += ray->B * B;
                 }
-                
-                col->R=ray->Ir > 1 ? 1 : ray->Ir;
-                col->G=ray->Ig > 1 ? 1 : ray->Ig;
-                col->B=ray->Ib > 1 ? 1 : ray->Ib;
-                #else
+
+                col->R = ray->Ir > 1 ? 1 : ray->Ir;
+                col->G = ray->Ig > 1 ? 1 : ray->Ig;
+                col->B = ray->Ib > 1 ? 1 : ray->Ib;
+#else
                 col->R = ray->R * R > 1 ? 1 : ray->R * R;
                 col->G = ray->G * G > 1 ? 1 : ray->G * G;
                 col->B = ray->B * B > 1 ? 1 : ray->B * B;
-                #endif
+#endif
             }
         } else {
-            #ifdef __USE_ES
-            col->R=ray->Ir;
-            col->G=ray->Ig;
-            col->B=ray->Ib;
-            #else
+#ifdef __USE_ES
+            col->R = ray->Ir;
+            col->G = ray->Ig;
+            col->B = ray->Ib;
+#else
             col->R = 0;
             col->G = 0;
             col->B = 0;
-            #endif
+#endif
 
             return;
         }
