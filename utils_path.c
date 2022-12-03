@@ -341,23 +341,21 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
     double C = dot(&ray_trans.p0, &ray_trans.p0) - 1; // C = p0 * p0 - 1
     double delta = B * B - A * C;
 
-    if (delta + 1e-6 < 0) { // no solution
+    if (delta < 0) { // no solution
         *lambda = -1;
         return;
-    } else {
-        double lambda1 = -B / A + sqrt(delta) / A;
-        double lambda2 = -B / A - sqrt(delta) / A;
+    } else {// two different solution
+        // "lambda_1 > lambda_2" because "sqrt(delta) / A > 0"
+        double lambda_1 = -B / A + sqrt(delta) / A;
+        double lambda_2 = -B / A - sqrt(delta) / A;
 
-        // delta == 0, one intersction, ray grazes the sphere
-        // l1>l2 && l2>0, both in front of plane, l2 is the closest.
-        *lambda = lambda2;
-        if (lambda1 < 0 && lambda2 < 0) // both behind the view-plane, not visible
-        {
+        if (lambda_1 < 0) { // 0 > lambda_1 > lambda_2
             *lambda = -1;
-        } else if (lambda1 > 0 && lambda2 < 0) // only l1 is visile
-        {
-            *lambda = lambda1;
-        }
+            return;
+        } else if (lambda_1 > 0 && lambda_2 < 0)  // lambda_1 > 0 > lambda_2
+            *lambda = lambda_1;
+            // lambda_1 > lambda_2 > 0
+        else *lambda = lambda_2;
     }
 
     if (*lambda < 0) {
