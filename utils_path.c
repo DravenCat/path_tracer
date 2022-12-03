@@ -358,17 +358,17 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
         }
     }
 
-    if (*lambda >= 0) {
+    if (*lambda < 0) {
+        *lambda = -1;
+        return;
+    } else {
         (ray_trans.rayPos)(&ray_trans, *lambda, p);
+        memcpy(&canonical_normal, p, sizeof(struct point3D));
 
-        canonical_normal.px = p->px;
-        canonical_normal.py = p->py;
-        canonical_normal.pz = p->pz;
-
-        if (dot(&canonical_normal, &ray_trans.d) > 0) {
-            canonical_normal.px *= -1;
-            canonical_normal.py *= -1;
-            canonical_normal.pz *= -1;
+        // make sure the normal is on the same side with p0
+        double dn = dot(&canonical_normal, &ray_trans.d);
+        if (dn > 0) {
+            canonical_normal.pz = -1;
         }
 
         // a and b
