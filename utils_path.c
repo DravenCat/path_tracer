@@ -268,59 +268,57 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-// transfer ray to canonical coordinates
-    struct ray3D ray_transformed;
-    rayTransform(ray, &ray_transformed, plane);
+    // Get transformed ray
+    struct ray3D ray_trans;
+    rayTransform(ray, &ray_trans, plane);
 
-    struct point3D plane_n;
-    plane_n.px = 0;
-    plane_n.py = 0;
-    plane_n.pz = 1;
+    // n = [0 0 1 1] for the canonical plane
+    struct point3D canonical_normal;
+    canonical_normal.px = 0;
+    canonical_normal.py = 0;
+    canonical_normal.pz = 1;
+    canonical_normal.pw = 1;
 
-    double temp = dot(&ray_transformed.d, &plane_n);
-    if (temp > 0) {
-        // angle between ray->d and normal < 90
-        plane_n.px *= -1;
-        plane_n.py *= -1;
-        plane_n.pz *= -1;
-        temp = dot(&ray_transformed.d, &plane_n);
+    // make sure the normal is on the same side with p0
+    double dn = dot(&ray_trans.d, &canonical_normal);
+    if (dn > 0) {
+        canonical_normal.pz = -1;
+        dn = dot(&ray_trans.d, &canonical_normal);
     }
 
-    struct point3D p1;
-    p1.px = -ray_transformed.p0.px;
-    p1.py = -ray_transformed.p0.py;
-    p1.pz = -ray_transformed.p0.pz;
+    double neg_p0n = -dot(&ray_trans.p0, &canonical_normal);
+    // (p0 + lambda * d) * n = 0
+    // => lambda = -p0*n/d*n
+    *lambda = neg_p0n / dn;
 
-    *lambda = dot(&p1, &plane_n) / temp;
-    (ray_transformed.rayPos)(&ray_transformed, *lambda, p);
-
-    if (fabs(p->px) > 1 || fabs(p->py) > 1) {
-        // point not on the plane
+    if (*lambda + 1e-6 < 0) {// behind the ray
         *lambda = -1;
-    } else {
-        // a and b
-        *a = (p->px + 1) / 2;
-        *b = (p->py + 1) / 2;
-
-        // bump mapping
-        if (plane->normalMap != NULL) {
-            double bump_R, bump_G, bump_B;
-            plane->textureMap(plane->normalMap, *a, *b, &bump_R, &bump_G, &bump_B);
-
-            plane_n.px = 2 * bump_R - 1;
-            plane_n.py = 2 * bump_B - 1;
-            plane_n.pz = 2 * bump_G - 1;
-
-            normalize(&plane_n);
-        }
-
-        // transfer intersection point to specific coordinate
-        (ray->rayPos)(ray, *lambda, p);
-
-        // transfer plane's normal to specific coordinate
-        normalTransform(&plane_n, n, plane);
+        return;
     }
 
+    // Check the validity for ray_trans
+    (ray_trans.rayPos)(&ray_trans, *lambda, p);
+    if (fabs(p->px) > 1 + 1e-6 || fabs(p->py) > 1 + 1e-6) { // outside the canonical plane
+        *lambda = -1;
+        return;
+    } else {
+        // compute a and b
+        *a = (p->px + 1.0) / 2.0;
+        *b = (p->py + 1.0) / 2.0;
+
+        // normal mapping
+        if (plane->normalMap) {
+            // initialize the transform matrix
+            rgb_to_coord(&canonical_normal, plane, *a, *b);
+            normalize(&canonical_normal);
+        }
+    }
+
+    // get the actual intersection point
+    (ray_trans.rayPos)(ray, *lambda, p);
+
+    // get the actual normal
+    normalTransform(&canonical_normal, n, plane);
 }
 
 void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n,
