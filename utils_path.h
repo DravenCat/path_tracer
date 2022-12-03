@@ -266,6 +266,12 @@ void deleteImage(struct image *im);
 // rayPosition() function which creates a new point3D structure!
 void cleanup(struct object3D *o_list, struct textureNode *t_list);
 
+inline void toggle_vec(struct point3D *d) {
+    d->px = -d->px;
+    d->py = -d->py;
+    d->pz = -d->pz;
+}
+
 void rgb_to_coord(struct point3D *model, struct object3D *obj, double a, double b);
 
 void tbn_transform(struct point3D *n, struct point3D *tangent, struct point3D *model);

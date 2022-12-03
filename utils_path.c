@@ -282,7 +282,7 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
     // make sure the normal is on the same side with p0
     double dn = dot(&ray_trans.d, &canonical_normal);
     if (dn > 0) {
-        canonical_normal.pz = -1;
+        toggle_vec(&canonical_normal);
         dn = dot(&ray_trans.d, &canonical_normal);
     }
 
@@ -369,9 +369,7 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
         // make sure the normal is on the same side with p0
         double dn = dot(&canonical_normal, &ray_trans.d);
         if (dn > 0) {
-            canonical_normal.px *= -1;
-            canonical_normal.py *= -1;
-            canonical_normal.pz *= -1;
+            toggle_vec(&canonical_normal);
         }
 
         *a = acos(p->px / sqrt(1 - p->pz * p->pz)) / (2 * PI);
@@ -448,8 +446,7 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
         // make sure the normal is on the same side with p0
         double dn = dot(&canonical_normal, &ray_trans.d);
         if (dn > 0) {
-            canonical_normal.px *= -1;
-            canonical_normal.py *= -1;
+            toggle_vec(&canonical_normal);
         }
 
         // a and b
