@@ -371,16 +371,8 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
             canonical_normal.pz = -1;
         }
 
-        // a and b
-        double phi = p->px != 0 ? atan(p->py / p->px) : PI / 2;
-        if (p->px < 0) {
-            phi += PI;
-        } else if (p->py < 0) {
-            phi += 2 * PI;
-        }
-        *a = phi / (2 * PI);
-
-        *b = (-asin(p->pz) + PI / 2) / PI;
+        *a = acos(p->px / sqrt(1 - p->pz * p->pz)) / (2 * PI);
+        *b = asin(p->pz) / PI + 0.5;
 
         // normal mapping
         if (sphere->normalMap) {
