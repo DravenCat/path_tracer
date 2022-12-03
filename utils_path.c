@@ -306,15 +306,12 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
         *a = (p->px + 1.0) / 2.0;
         *b = (p->py + 1.0) / 2.0;
 
-        // bump mapping
+        // normal mapping
         if (plane->normalMap != NULL) {
-            double bump_R, bump_G, bump_B;
-            plane->textureMap(plane->normalMap, *a, *b, &bump_R, &bump_G, &bump_B);
-
-            canonical_normal.px = 2 * bump_R - 1;
-            canonical_normal.py = 2 * bump_B - 1;
-            canonical_normal.pz = 2 * bump_G - 1;
-
+            rgb_to_coord(&canonical_normal, plane, *a, *b);
+            double tmp = canonical_normal.pz;
+            canonical_normal.pz = canonical_normal.py;
+            canonical_normal.py = tmp;
             normalize(&canonical_normal);
         }
     }
