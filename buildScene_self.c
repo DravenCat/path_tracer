@@ -76,8 +76,8 @@ void buildScene(void) {
 // Translate(o,0,-10, 10);
     RotateY(o, PI / 2);
     Translate(o, -14, 0, 10);
-    loadTexture(o, "./texture/background.PPM", 1, &texture_list);
-    loadTexture(o, "./texture/nbackground.PPM", 2, &texture_list);
+    loadTexture(o, "./texture/background.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nbackground.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -87,8 +87,8 @@ void buildScene(void) {
 // Translate(o,0,-10, 10);
     RotateY(o, PI / 2);
     Translate(o, 14, 0, 10);
-    loadTexture(o, "./texture/background.PPM", 1, &texture_list);
-    loadTexture(o, "./texture/nbackground.PPM", 2, &texture_list);
+    loadTexture(o, "./texture/background.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nbackground.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -97,7 +97,7 @@ void buildScene(void) {
     Scale(o, 15, 12, 12);
     RotateZ(o, PI);
     Translate(o, 0, 0, 20);
-    loadTexture(o, "./texture/arcDoor.PPM", 1, &texture_list);
+    loadTexture(o, "./texture/arcDoor.ppm", 1, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -112,8 +112,8 @@ void buildScene(void) {
     Scale(o, 20, 20, 20);
     RotateX(o, PI / 2);
     Translate(o, 0, -10, 10);
-    loadTexture(o, "./texture/floor.PPM", 1, &texture_list);
-    loadTexture(o, "./texture/nfloor.PPM", 2, &texture_list);
+    loadTexture(o, "./texture/floor.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nfloor.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
