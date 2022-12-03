@@ -329,24 +329,24 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-// transfer ray to canonical coordinates
-    struct ray3D ray_transformed;
-    rayTransform(ray, &ray_transformed, sphere);
+    // Get the transformed ray
+    struct ray3D ray_trans;
+    rayTransform(ray, &ray_trans, sphere);
+    struct point3D canonical_normal;
 
-// point a is ray.po, point d is ray.d
-    double cap_a = dot(&ray_transformed.d, &ray_transformed.d);
-    double cap_b = dot(&ray_transformed.p0, &ray_transformed.d);
-    double cap_c = dot(&ray_transformed.p0, &ray_transformed.p0) - 1;
-    double cap_d = cap_b * cap_b - cap_a * cap_c;
+    double A = dot(&ray_trans.d, &ray_trans.d); // A = d * d
+    double B = dot(&ray_trans.p0, &ray_trans.d); // B = p0 * d
+    double C = dot(&ray_trans.p0, &ray_trans.p0) - 1; // C = p0 * p0 - 1
+    double delta = B * B - A * C;
 
-    if (cap_d < 0) // no interesection
+    if (delta < 0) // no interesection
     {
         *lambda = -1;
     } else {
-        double lambda1 = -cap_b / cap_a + sqrt(cap_d) / cap_a;
-        double lambda2 = -cap_b / cap_a - sqrt(cap_d) / cap_a;
+        double lambda1 = -B / A + sqrt(delta) / A;
+        double lambda2 = -B / A - sqrt(delta) / A;
 
-        // cap_d == 0, one intersction, ray grazes the sphere
+        // delta == 0, one intersction, ray grazes the sphere
         // l1>l2 && l2>0, both in front of plane, l2 is the closest.
         *lambda = lambda2;
         if (lambda1 < 0 && lambda2 < 0) // both behind the view-plane, not visible
@@ -359,16 +359,16 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
     }
 
     if (*lambda >= 0) {
-        (ray_transformed.rayPos)(&ray_transformed, *lambda, p);
-        struct point3D sphere_n;
-        sphere_n.px = p->px;
-        sphere_n.py = p->py;
-        sphere_n.pz = p->pz;
+        (ray_trans.rayPos)(&ray_trans, *lambda, p);
 
-        if (dot(&sphere_n, &ray_transformed.d) > 0) {
-            sphere_n.px *= -1;
-            sphere_n.py *= -1;
-            sphere_n.pz *= -1;
+        canonical_normal.px = p->px;
+        canonical_normal.py = p->py;
+        canonical_normal.pz = p->pz;
+
+        if (dot(&canonical_normal, &ray_trans.d) > 0) {
+            canonical_normal.px *= -1;
+            canonical_normal.py *= -1;
+            canonical_normal.pz *= -1;
         }
 
         // a and b
@@ -392,32 +392,32 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
             normalTex.py = 2 * bump_G - 1;
             normalTex.pz = 2 * bump_B - 1;
             struct point3D tangent;
-            tangent.px = sphere_n.py;
-            tangent.py = -sphere_n.px;
+            tangent.px = canonical_normal.py;
+            tangent.py = -canonical_normal.px;
             tangent.pz = 0;
-            struct point3D *binormal = cross(&tangent, &sphere_n);
+            struct point3D *binormal = cross(&tangent, &canonical_normal);
 
             double M[4][4] = {
-                    {sphere_n.py,  binormal->px, sphere_n.px, 0.0},
-                    {-sphere_n.px, binormal->py, sphere_n.py, 0.0},
-                    {sphere_n.pz,  binormal->pz, sphere_n.pz, 0.0},
-                    {0.0,          0.0,          0.0,         1.0}};
+                    {canonical_normal.py,  binormal->px, canonical_normal.px, 0.0},
+                    {-canonical_normal.px, binormal->py, canonical_normal.py, 0.0},
+                    {canonical_normal.pz,  binormal->pz, canonical_normal.pz, 0.0},
+                    {0.0,                  0.0,          0.0,                 1.0}};
 
             matVecMult(M, &normalTex);
             normalize(&normalTex);
 
-            sphere_n.px = normalTex.px;
-            sphere_n.py = normalTex.py;
-            sphere_n.pz = normalTex.pz;
+            canonical_normal.px = normalTex.px;
+            canonical_normal.py = normalTex.py;
+            canonical_normal.pz = normalTex.pz;
 
             free(binormal);
         }
 
-        // transfer intersection point to specific coordinate
-        (ray->rayPos)(ray, *lambda, p);
+        // get the actual intersection point
+        (ray_trans.rayPos)(ray, *lambda, p);
 
-        // transfer plane's normal to specific coordinate
-        normalTransform(&sphere_n, n, sphere);
+        // get the actual normal
+        normalTransform(&canonical_normal, n, sphere);
 
     }
 }
