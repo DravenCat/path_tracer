@@ -308,6 +308,7 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
 
         // normal mapping
         if (plane->normalMap != NULL) {
+            // initialize the transform matrix
             rgb_to_coord(&canonical_normal, plane, *a, *b);
             double tmp = canonical_normal.pz;
             canonical_normal.pz = canonical_normal.py;
@@ -1163,6 +1164,8 @@ struct image *readPPMimage(const char *filename) {
     int i;
     unsigned char *tmp;
     double *fRGB;
+    int tmpi;
+    char *tmpc;
 
     im = (struct image *) calloc(1, sizeof(struct image));
     if (im != NULL) {
@@ -1173,7 +1176,7 @@ struct image *readPPMimage(const char *filename) {
             free(im);
             return (NULL);
         }
-        fgets(&line[0], 1000, f);
+        tmpc = fgets(&line[0], 1000, f);
         if (strcmp(&line[0], "P6\n") != 0) {
             fprintf(stderr, "Wrong file format, not a .ppm file or header end-of-line characters missing\n");
             free(im);
@@ -1182,17 +1185,17 @@ struct image *readPPMimage(const char *filename) {
         }
         fprintf(stderr, "%s\n", line);
         // Skip over comments
-        fgets(&line[0], 511, f);
+        tmpc = fgets(&line[0], 511, f);
         while (line[0] == '#') {
             fprintf(stderr, "%s", line);
-            fgets(&line[0], 511, f);
+            tmpc = fgets(&line[0], 511, f);
         }
         sscanf(&line[0], "%d %d\n", &sizx, &sizy);           // Read file size
         fprintf(stderr, "nx=%d, ny=%d\n\n", sizx, sizy);
         im->sx = sizx;
         im->sy = sizy;
 
-        fgets(&line[0], 9, f);                    // Read the remaining header line
+        tmpc = fgets(&line[0], 9, f);                    // Read the remaining header line
         fprintf(stderr, "%s\n", line);
         tmp = (unsigned char *) calloc(sizx * sizy * 3, sizeof(unsigned char));
         fRGB = (double *) calloc(sizx * sizy * 3, sizeof(double));
@@ -1203,7 +1206,7 @@ struct image *readPPMimage(const char *filename) {
             return (NULL);
         }
 
-        fread(tmp, sizx * sizy * 3 * sizeof(unsigned char), 1, f);
+        tmpi = fread(tmp, sizx * sizy * 3 * sizeof(unsigned char), 1, f);
         fclose(f);
 
         // Conversion to floating point
@@ -1238,6 +1241,8 @@ struct image *readPGMimage(const char *filename) {
     int i;
     unsigned char *tmp;
     double *fRGB;
+    int tmpi;
+    char *tmpc;
 
     im = (struct image *) calloc(1, sizeof(struct image));
     if (im != NULL) {
@@ -1248,7 +1253,7 @@ struct image *readPGMimage(const char *filename) {
             free(im);
             return (NULL);
         }
-        fgets(&line[0], 1000, f);
+        tmpc = fgets(&line[0], 1000, f);
         if (strcmp(&line[0], "P5\n") != 0) {
             fprintf(stderr, "Wrong file format, not a .pgm file or header end-of-line characters missing\n");
             free(im);
@@ -1256,14 +1261,14 @@ struct image *readPGMimage(const char *filename) {
             return (NULL);
         }
         // Skip over comments
-        fgets(&line[0], 511, f);
+        tmpc = fgets(&line[0], 511, f);
         while (line[0] == '#')
-            fgets(&line[0], 511, f);
+            tmpc = fgets(&line[0], 511, f);
         sscanf(&line[0], "%d %d\n", &sizx, &sizy);           // Read file size
         im->sx = sizx;
         im->sy = sizy;
 
-        fgets(&line[0], 9, f);                    // Read the remaining header line
+        tmpc = fgets(&line[0], 9, f);                    // Read the remaining header line
         tmp = (unsigned char *) calloc(sizx * sizy, sizeof(unsigned char));
         fRGB = (double *) calloc(sizx * sizy, sizeof(double));
         if (tmp == NULL || fRGB == NULL) {
@@ -1273,7 +1278,7 @@ struct image *readPGMimage(const char *filename) {
             return (NULL);
         }
 
-        fread(tmp, sizx * sizy * sizeof(unsigned char), 1, f);
+        tmpi = fread(tmp, sizx * sizy * sizeof(unsigned char), 1, f);
         fclose(f);
 
         // Conversion to double floating point
