@@ -399,32 +399,40 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-    struct ray3D ray_transformed;
-    rayTransform(r, &ray_transformed, cylinder);
+    // Get the transformed ray
+    struct ray3D ray_trans;
+    rayTransform(r, &ray_trans, cylinder);
+    struct point3D canonical_normal;
 
-    double cap_a = dot(&ray_transformed.d, &ray_transformed.d) - pow(ray_transformed.d.pz, 2);
-    double cap_b = dot(&ray_transformed.p0, &ray_transformed.d) - ray_transformed.p0.pz * ray_transformed.d.pz;
-    double cap_c = dot(&ray_transformed.p0, &ray_transformed.p0) - pow(ray_transformed.p0.pz, 2) - 1;
-    double cap_d = cap_b * cap_b - cap_a * cap_c;
+    // Calculate whether the ray hit the wall
+    struct point3D *ray_trans_p0xy = newPoint(ray_trans.p0.px, ray_trans.p0.py, 0);
+    struct point3D *ray_trans_dxy = newPoint(ray_trans.d.px, ray_trans.d.py, 0);
 
-    if (cap_d < 0) // no interesection
+    double A = dot(ray_trans_dxy, ray_trans_dxy); // A = d * d
+    double B = dot(ray_trans_p0xy, ray_trans_dxy); // B = p0 * d
+    double C = dot(ray_trans_p0xy, ray_trans_p0xy) - 1; // C = p0 * p0 - 1
+    double delta = B * B - A * C;
+    free(ray_trans_p0xy);
+    free(ray_trans_dxy);
+
+    if (delta < 0) // no interesection
     {
         *lambda = -1;
     } else {
-        double lambda1 = -cap_b / cap_a + sqrt(cap_d) / cap_a;
-        double lambda2 = -cap_b / cap_a - sqrt(cap_d) / cap_a;
+        double lambda_1 = -B / A + sqrt(delta) / A;
+        double lambda_2 = -B / A - sqrt(delta) / A;
 
-        // cap_d == 0, one intersction, ray grazes the sphere
+        // delta == 0, one intersction, ray grazes the sphere
         // l1>l2 && l2>0, both in front of plane, l2 is the closest.
-        *lambda = lambda2;
-        (ray_transformed.rayPos)(&ray_transformed, *lambda, p);
-        if ((lambda1 > 0 && lambda2 < 0) || (p->pz > 0.5 || p->pz < -0.5)) {
+        *lambda = lambda_2;
+        (ray_trans.rayPos)(&ray_trans, *lambda, p);
+        if ((lambda_1 > 0 && lambda_2 < 0) || (p->pz > 0.5 || p->pz < -0.5)) {
             // only l1 is visile || pz out of range
-            *lambda = lambda1;
+            *lambda = lambda_1;
         }
 
-        (ray_transformed.rayPos)(&ray_transformed, *lambda, p);
-        if ((lambda1 < 0 && lambda2 < 0) || (p->pz > 0.5 || p->pz < -0.5)) {
+        (ray_trans.rayPos)(&ray_trans, *lambda, p);
+        if ((lambda_1 < 0 && lambda_2 < 0) || (p->pz > 0.5 || p->pz < -0.5)) {
             // both behind the view-plane, not visible
             // if pz for both l1 and l2 out of range
             *lambda = -1;
@@ -432,16 +440,15 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
     }
 
     if (*lambda >= 0) {
-        (ray_transformed.rayPos)(&ray_transformed, *lambda, p);
+        (ray_trans.rayPos)(&ray_trans, *lambda, p);
 
-        struct point3D cylinder_n;
-        cylinder_n.px = p->px;
-        cylinder_n.py = p->py;
-        cylinder_n.pz = 0;
-        if (dot(&cylinder_n, &ray_transformed.d) > 0) {
-            cylinder_n.px *= -1;
-            cylinder_n.py *= -1;
-            cylinder_n.pz *= -1;
+        canonical_normal.px = p->px;
+        canonical_normal.py = p->py;
+        canonical_normal.pz = 0;
+        if (dot(&canonical_normal, &ray_trans.d) > 0) {
+            canonical_normal.px *= -1;
+            canonical_normal.py *= -1;
+            canonical_normal.pz *= -1;
         }
 
         // a and b
@@ -462,21 +469,21 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
             cylinder->textureMap(cylinder->normalMap, *a, *b, &bump_R, &bump_G, &bump_B);
 
             struct point3D *normalTex = newPoint(2 * bump_R - 1, 2 * bump_G - 1, 2 * bump_B - 1);
-            struct point3D *tangent = newPoint(cylinder_n.py, -cylinder_n.px, 0);
-            struct point3D *binormal = cross(tangent, &cylinder_n);
+            struct point3D *tangent = newPoint(canonical_normal.py, -canonical_normal.px, 0);
+            struct point3D *binormal = cross(tangent, &canonical_normal);
 
             double M[4][4] = {
-                    {cylinder_n.py,  binormal->px, cylinder_n.px, 0.0},
-                    {-cylinder_n.px, binormal->py, cylinder_n.py, 0.0},
-                    {cylinder_n.pz,  binormal->pz, cylinder_n.pz, 0.0},
-                    {0.0,            0.0,          0.0,           1.0}};
+                    {canonical_normal.py,  binormal->px, canonical_normal.px, 0.0},
+                    {-canonical_normal.px, binormal->py, canonical_normal.py, 0.0},
+                    {canonical_normal.pz,  binormal->pz, canonical_normal.pz, 0.0},
+                    {0.0,                  0.0,          0.0,                 1.0}};
 
             matVecMult(M, normalTex);
             normalize(normalTex);
 
-            cylinder_n.px = normalTex->px;
-            cylinder_n.py = normalTex->py;
-            cylinder_n.pz = normalTex->pz;
+            canonical_normal.px = normalTex->px;
+            canonical_normal.py = normalTex->py;
+            canonical_normal.pz = normalTex->pz;
 
             free(normalTex);
             free(binormal);
@@ -487,7 +494,7 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
         (r->rayPos)(r, *lambda, p);
 
         // transfer cylinder's normal to specific coordinate
-        normalTransform(&cylinder_n, n, cylinder);
+        normalTransform(&canonical_normal, n, cylinder);
     }
 }
 
