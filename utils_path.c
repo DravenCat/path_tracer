@@ -461,30 +461,11 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
         *a = phi / (2 * PI);
         *b = p->pz + 0.5;
 
-// bump mapping
+        // normal mapping
         if (cylinder->normalMap) {
-            double bump_R, bump_G, bump_B;
-            cylinder->textureMap(cylinder->normalMap, *a, *b, &bump_R, &bump_G, &bump_B);
-
-            struct point3D *normalTex = newPoint(2 * bump_R - 1, 2 * bump_G - 1, 2 * bump_B - 1);
+            rgb_to_coord(n, cylinder, *a, *b);
             struct point3D *tangent = newPoint(canonical_normal.py, -canonical_normal.px, 0);
-            struct point3D *binormal = cross(tangent, &canonical_normal);
-
-            double M[4][4] = {
-                    {canonical_normal.py,  binormal->px, canonical_normal.px, 0.0},
-                    {-canonical_normal.px, binormal->py, canonical_normal.py, 0.0},
-                    {canonical_normal.pz,  binormal->pz, canonical_normal.pz, 0.0},
-                    {0.0,                  0.0,          0.0,                 1.0}};
-
-            matVecMult(M, normalTex);
-            normalize(normalTex);
-
-            canonical_normal.px = normalTex->px;
-            canonical_normal.py = normalTex->py;
-            canonical_normal.pz = normalTex->pz;
-
-            free(normalTex);
-            free(binormal);
+            tbn_transform(&canonical_normal, tangent, n);
             free(tangent);
         }
 
