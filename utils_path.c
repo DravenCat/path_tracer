@@ -379,7 +379,7 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
         if (sphere->normalMap) {
             rgb_to_coord(n, sphere, *a, *b);
 
-            struct point3D *tangent = newPoint(p->py, -p->px, 0);
+            struct point3D *tangent = newPoint(canonical_normal.py, -canonical_normal.px, 0);
             tbn_transform(&canonical_normal, tangent, n);
             free(tangent);
         }
