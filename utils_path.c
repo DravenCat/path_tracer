@@ -341,9 +341,9 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
     double C = dot(&ray_trans.p0, &ray_trans.p0) - 1; // C = p0 * p0 - 1
     double delta = B * B - A * C;
 
-    if (delta < 0) // no interesection
-    {
+    if (delta + 1e-6 < 0) { // no solution
         *lambda = -1;
+        return;
     } else {
         double lambda1 = -B / A + sqrt(delta) / A;
         double lambda2 = -B / A - sqrt(delta) / A;
