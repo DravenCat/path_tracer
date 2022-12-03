@@ -452,15 +452,9 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
         }
 
         // a and b
-        //  *a = (acos(p->px) + PI / 2) / PI;
-        //  *b = p->pz + 0.5;
-        double phi = p->px != 0 ? atan(p->py / p->px) : PI / 2;
-        if (p->px < 0) {
-            phi += PI;
-        } else if (p->py < 0) {
-            phi += 2 * PI;
-        }
-        *a = phi / (2 * PI);
+        double theta = atan2(p->py, p->px);
+        if (theta < 0) theta += (2 * PI);
+        *a = theta / (2 * PI);
         *b = p->pz + 0.5;
 
         // normal mapping
