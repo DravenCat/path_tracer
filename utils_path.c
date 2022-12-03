@@ -376,19 +376,21 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
         *b = asin(p->pz) / PI + 0.5;
 
         // normal mapping
+        struct point3D model;
+        memcpy(&model, &canonical_normal, sizeof(struct point3D));
         if (sphere->normalMap) {
-            rgb_to_coord(n, sphere, *a, *b);
+            rgb_to_coord(&model, sphere, *a, *b);
 
             struct point3D *tangent = newPoint(canonical_normal.py, -canonical_normal.px, 0);
-            tbn_transform(&canonical_normal, tangent, n);
+            tbn_transform(&canonical_normal, tangent, &model);
             free(tangent);
         }
-    }
-    // get the actual intersection point
-    (ray_trans.rayPos)(ray, *lambda, p);
+        // get the actual intersection point
+        (ray_trans.rayPos)(ray, *lambda, p);
 
-    // get the actual normal
-    normalTransform(&canonical_normal, n, sphere);
+        // get the actual normal
+        normalTransform(&model, n, sphere);
+    }
 }
 
 void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n,
@@ -462,10 +464,12 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
         *b = p->pz + 0.5;
 
         // normal mapping
+        struct point3D model;
+        memcpy(&model, &canonical_normal, sizeof(struct point3D));
         if (cylinder->normalMap) {
-            rgb_to_coord(n, cylinder, *a, *b);
+            rgb_to_coord(&model, cylinder, *a, *b);
             struct point3D *tangent = newPoint(canonical_normal.py, -canonical_normal.px, 0);
-            tbn_transform(&canonical_normal, tangent, n);
+            tbn_transform(&canonical_normal, tangent, &model);
             free(tangent);
         }
 
@@ -473,7 +477,7 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
         (r->rayPos)(r, *lambda, p);
 
         // transfer cylinder's normal to specific coordinate
-        normalTransform(&canonical_normal, n, cylinder);
+        normalTransform(&model, n, cylinder);
     }
 }
 
