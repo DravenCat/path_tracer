@@ -697,62 +697,67 @@ void texMap(struct image *img, double a, double b, double *R, double *G, double 
     // coordinates. Your code should use bi-linear
     // interpolation to obtain the texture colour.
     //////////////////////////////////////////////////
-    int ia, ib, ia2, ib2;     // Coordinates of interpolation vertices
-    double r1, g1, b1;       // Colour at the four vertex pixels
-    double r2, g2, b2;
-    double r3, g3, b3;
-    double r4, g4, b4;
-    double fracc_a, fracc_b;               // Location within 4-pixel region
-    double *ip = (double *) img->rgbdata;     // Pointer to double image data
+    int ia, ib, ia2, ib2;     // coordinates of bi-linear interpolation
+    double intpart_a, intpart_b;
+    double r1, g1, b1, r2, g2, b2, r3, g3, b3, r4, g4, b4;       // color of four nodes
+    double ratio_a, ratio_b;               // ratio in horizontal/vertical direction
+    double *tp = (double *) img->rgbdata;     // image data
 
-// Obtain integer coordinates in terms of texture size. Ensure they will
-// be within bounds
-    if (a < 0) a = 0;
-    if (b < 0) b = 0;
-    if (a > 1) a = 1;
-    if (b > 1) b = 1;
+    a = max(-1e-6, a);
+    b = max(-1e-6, b);
+    a = min(1 + 1e-6, a);
+    b = min(1 + 1e-6, b);
 
-    fracc_a = (a * img->sx);
-    fracc_b = (b * img->sy);
-    ia = (int) fracc_a;
-    ib = (int) fracc_b;
-    if (ia >= img->sx) ia = img->sx - 1;
-    if (ib >= img->sy) ib = img->sy - 1;
+    // get coordinate of the point and the ratio within the pixel
+    ratio_a = modf(a * img->sx, &intpart_a);
+    ratio_b = modf(b * img->sy, &intpart_b);
+    ia = (int) intpart_a;
+    ib = (int) intpart_b;
 
-    fracc_a = fracc_a - ia;
-    fracc_b = fracc_b - ib;
-    if (fracc_a > 0) ia2 = ia + 1; else ia2 = ia;
-    if (fracc_b > 0) ib2 = ib + 1; else ib2 = ib;
+    if (ia >= img->sx) {
+        ia = img->sx - 1;
+        ratio_a = 1.0;
+    }
+    if (ib >= img->sy) {
+        ib = img->sy - 1;
+        ratio_b = 1.0;
+    }
 
-    if (ia2 >= img->sx) ia2 = img->sx - 1;
-    if (ib2 >= img->sy) ib2 = img->sy - 1;
+    ia2 = ia + 1;
+    ib2 = ib + 1;
+    ia2 = min(img->sx - 1, ia2);
+    ib2 = min(img->sy - 1, ib2);
 
-    r1 = *(ip + ((ia + (ib * img->sx)) * 3) + 0);
-    g1 = *(ip + ((ia + (ib * img->sx)) * 3) + 1);
-    b1 = *(ip + ((ia + (ib * img->sx)) * 3) + 2);
+    // enable bi-linear interpolation
+    //  c3.........c4
+    //   :     x   :      r
+    //   :         :   (1-r)
+    //  c1 ....... c2
+    //   (1-r) | r
+    r1 = *(tp + ((ia + (ib * img->sx)) * 3) + 0);
+    g1 = *(tp + ((ia + (ib * img->sx)) * 3) + 1);
+    b1 = *(tp + ((ia + (ib * img->sx)) * 3) + 2);
 
-    r2 = *(ip + ((ia2 + (ib * img->sx)) * 3) + 0);
-    g2 = *(ip + ((ia2 + (ib * img->sx)) * 3) + 1);
-    b2 = *(ip + ((ia2 + (ib * img->sx)) * 3) + 2);
+    r2 = *(tp + ((ia2 + (ib * img->sx)) * 3) + 0);
+    g2 = *(tp + ((ia2 + (ib * img->sx)) * 3) + 1);
+    b2 = *(tp + ((ia2 + (ib * img->sx)) * 3) + 2);
 
-    r3 = *(ip + ((ia + (ib2 * img->sx)) * 3) + 0);
-    g3 = *(ip + ((ia + (ib2 * img->sx)) * 3) + 1);
-    b3 = *(ip + ((ia + (ib2 * img->sx)) * 3) + 2);
+    r3 = *(tp + ((ia + (ib2 * img->sx)) * 3) + 0);
+    g3 = *(tp + ((ia + (ib2 * img->sx)) * 3) + 1);
+    b3 = *(tp + ((ia + (ib2 * img->sx)) * 3) + 2);
 
-    r4 = *(ip + ((ia2 + (ib2 * img->sx)) * 3) + 0);
-    g4 = *(ip + ((ia2 + (ib2 * img->sx)) * 3) + 1);
-    b4 = *(ip + ((ia2 + (ib2 * img->sx)) * 3) + 2);
+    r4 = *(tp + ((ia2 + (ib2 * img->sx)) * 3) + 0);
+    g4 = *(tp + ((ia2 + (ib2 * img->sx)) * 3) + 1);
+    b4 = *(tp + ((ia2 + (ib2 * img->sx)) * 3) + 2);
 
-    *R = (1 - fracc_b) * (((1 - fracc_a) * r1) + (fracc_a * r2));
-    *R += fracc_b * (((1 - fracc_a) * r3) + (fracc_a * r4));
+    // c_bot = (1-r_a)c1 + r_a*c2
+    // c_top = (1-r_a)c3 + r_a*c4
+    // c = (1-r_b)c_bot + r_b*c_top
+    *R = (1 - ratio_b) * (((1 - ratio_a) * r1) + (ratio_a * r2)) + ratio_b * (((1 - ratio_a) * r3) + (ratio_a * r4));
 
-    *G = (1 - fracc_b) * (((1 - fracc_a) * g1) + (fracc_a * g2));
-    *G += fracc_b * (((1 - fracc_a) * g3) + (fracc_a * g4));
+    *G = (1 - ratio_b) * (((1 - ratio_a) * g1) + (ratio_a * g2)) + ratio_b * (((1 - ratio_a) * g3) + (ratio_a * g4));
 
-    *B = (1 - fracc_b) * (((1 - fracc_a) * b1) + (fracc_a * b2));
-    *B += fracc_b * (((1 - fracc_a) * b3) + (fracc_a * b4));
-
-    return;
+    *B = (1 - ratio_b) * (((1 - ratio_a) * b1) + (ratio_a * b2)) + ratio_b * (((1 - ratio_a) * b3) + (ratio_a * b4));
 }
 
 void alphaMap(struct image *img, double a, double b, double *alpha) {
@@ -761,29 +766,24 @@ void alphaMap(struct image *img, double a, double b, double *alpha) {
     // the separate function.
 
     //////////////////////////////////////////////////
-    // TO DO:
+    // TO DO (Assignment 4 only):
     //
     //  Complete this function to return the alpha
     // value from the image at the specified texture
     // coordinates. Your code should use bi-linear
     // interpolation to obtain the texture colour.
     //////////////////////////////////////////////////
+    double intpart_a, intpart_b;
+    double *tp = (double *) img->rgbdata;
+    a = max(-1e-6, a);
+    b = max(-1e-6, b);
+    a = min(1 + 1e-6, a);
+    b = min(1 + 1e-6, b);
 
-    if (a < 0) a = 0;
-    if (b < 0) b = 0;
-    if (a > 1) a = 1;
-    if (b > 1) b = 1;
-    double newa, newb;
-    int ia, ib;
-    double *imgcol = (double *) img->rgbdata;
+    modf(a * (img->sx - 1), &intpart_a);
+    modf(b * (img->sy - 1), &intpart_b);
 
-    newa = a * (img->sx - 1);
-    newb = b * (img->sy - 1);
-    ia = (int) newa;
-    ib = (int) newb;
-
-    //printf("im here\n");
-    *(alpha) = *(imgcol + ia + (ib * img->sx));
+    *(alpha) = *(tp + (int) intpart_a + ((int) intpart_b * img->sx));
 }
 
 
