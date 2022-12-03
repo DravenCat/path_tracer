@@ -369,7 +369,9 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
         // make sure the normal is on the same side with p0
         double dn = dot(&canonical_normal, &ray_trans.d);
         if (dn > 0) {
-            canonical_normal.pz = -1;
+            canonical_normal.px *= -1;
+            canonical_normal.py *= -1;
+            canonical_normal.pz *= -1;
         }
 
         *a = acos(p->px / sqrt(1 - p->pz * p->pz)) / (2 * PI);
@@ -419,36 +421,35 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
     {
         *lambda = -1;
     } else {
+        // "lambda_1 > lambda_2" because "sqrt(delta) / A > 0"
         double lambda_1 = -B / A + sqrt(delta) / A;
         double lambda_2 = -B / A - sqrt(delta) / A;
 
-        // delta == 0, one intersction, ray grazes the sphere
-        // l1>l2 && l2>0, both in front of plane, l2 is the closest.
         *lambda = lambda_2;
         (ray_trans.rayPos)(&ray_trans, *lambda, p);
-        if ((lambda_1 > 0 && lambda_2 < 0) || (p->pz > 0.5 || p->pz < -0.5)) {
-            // only l1 is visile || pz out of range
+        if ((lambda_1 > 0 && lambda_2 < 0) || (fabs(p->pz) > 0.5)) { // l1 > 0 > l2 or |z_l2|>0.5
             *lambda = lambda_1;
+            (ray_trans.rayPos)(&ray_trans, *lambda, p);
         }
 
-        (ray_trans.rayPos)(&ray_trans, *lambda, p);
-        if ((lambda_1 < 0 && lambda_2 < 0) || (p->pz > 0.5 || p->pz < -0.5)) {
-            // both behind the view-plane, not visible
-            // if pz for both l1 and l2 out of range
+        if ((lambda_1 < 0 && lambda_2 < 0) || (fabs(p->pz) > 0.5)) { // 0 > l1 > l2 or |z_l1|>0.5
             *lambda = -1;
         }
     }
 
-    if (*lambda >= 0) {
+    // check the intersection is in forward direction
+    if (*lambda < 0) {
+        *lambda = -1;
+    } else { // Get the actual intersection with the quadratic wall
         (ray_trans.rayPos)(&ray_trans, *lambda, p);
-
-        canonical_normal.px = p->px;
-        canonical_normal.py = p->py;
+        memcpy(&canonical_normal, p, sizeof(struct point3D));
         canonical_normal.pz = 0;
-        if (dot(&canonical_normal, &ray_trans.d) > 0) {
+
+        // make sure the normal is on the same side with p0
+        double dn = dot(&canonical_normal, &ray_trans.d);
+        if (dn > 0) {
             canonical_normal.px *= -1;
             canonical_normal.py *= -1;
-            canonical_normal.pz *= -1;
         }
 
         // a and b
