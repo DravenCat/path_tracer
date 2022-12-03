@@ -358,6 +358,7 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
         else *lambda = lambda_2;
     }
 
+    // check the intersection is in forward direction
     if (*lambda < 0) {
         *lambda = -1;
         return;
