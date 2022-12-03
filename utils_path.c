@@ -306,10 +306,15 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
         *a = (p->px + 1.0) / 2.0;
         *b = (p->py + 1.0) / 2.0;
 
-        // normal mapping
-        if (plane->normalMap) {
-            // initialize the transform matrix
-            rgb_to_coord(&canonical_normal, plane, *a, *b);
+        // bump mapping
+        if (plane->normalMap != NULL) {
+            double bump_R, bump_G, bump_B;
+            plane->textureMap(plane->normalMap, *a, *b, &bump_R, &bump_G, &bump_B);
+
+            canonical_normal.px = 2 * bump_R - 1;
+            canonical_normal.py = 2 * bump_B - 1;
+            canonical_normal.pz = 2 * bump_G - 1;
+
             normalize(&canonical_normal);
         }
     }
@@ -384,11 +389,33 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
 
         // normal mapping
         if (sphere->normalMap) {
-            rgb_to_coord(n, sphere, *a, *b);
+            double bump_R, bump_G, bump_B;
+            sphere->textureMap(sphere->normalMap, *a, *b, &bump_R, &bump_G, &bump_B);
 
-            struct point3D *tangent = newPoint(p->py, -p->px, 0);
-            tbn_transform(&canonical_normal, tangent, n);
-            free(tangent);
+            struct point3D normalTex;
+            normalTex.px = 2 * bump_R - 1;
+            normalTex.py = 2 * bump_G - 1;
+            normalTex.pz = 2 * bump_B - 1;
+            struct point3D tangent;
+            tangent.px = canonical_normal.py;
+            tangent.py = -canonical_normal.px;
+            tangent.pz = 0;
+            struct point3D *binormal = cross(&tangent, &canonical_normal);
+
+            double M[4][4] = {
+                    {canonical_normal.py,  binormal->px, canonical_normal.px, 0.0},
+                    {-canonical_normal.px, binormal->py, canonical_normal.py, 0.0},
+                    {canonical_normal.pz,  binormal->pz, canonical_normal.pz, 0.0},
+                    {0.0,          0.0,          0.0,         1.0}};
+
+            matVecMult(M, &normalTex);
+            normalize(&normalTex);
+
+            canonical_normal.px = normalTex.px;
+            canonical_normal.py = normalTex.py;
+            canonical_normal.pz = normalTex.pz;
+
+            free(binormal);
         }
 
         // get the actual intersection point
