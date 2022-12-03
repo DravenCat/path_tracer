@@ -486,12 +486,12 @@ void planeCoordinates(struct object3D *plane, double a, double b, double *x, dou
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-    struct point3D *p = newPoint(2 * a - 1, 2 * b - 1, 0);
-    matVecMult(plane->T, p);
-    *x = p->px;
-    *y = p->py;
-    *z = p->pz;
-    free(p);
+    struct point3D *p0 = newPoint(2 * a - 1, 2 * b - 1, 0);
+    matVecMult(plane->T, p0);
+    *x = p0->px;
+    *y = p0->py;
+    *z = p0->pz;
+    free(p0);
 }
 
 void sphereCoordinates(struct object3D *sphere, double a, double b, double *x, double *y, double *z) {
@@ -502,15 +502,14 @@ void sphereCoordinates(struct object3D *sphere, double a, double b, double *x, d
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-    double u = cos(b);
-    double temp = sqrt(1 - pow(u, 2));
+    double tmp = sqrt(1 - pow(cos(b), 2));
 
-    struct point3D *p = newPoint(temp * cos(a), temp * sin(a), u);
-    matVecMult(sphere->T, p);
-    *x = p->px;
-    *y = p->py;
-    *z = p->pz;
-    free(p);
+    struct point3D *p0 = newPoint(tmp * cos(a), tmp * sin(a), cos(b));
+    matVecMult(sphere->T, p0);
+    *x = p0->px;
+    *y = p0->py;
+    *z = p0->pz;
+    free(p0);
 }
 
 void cylCoordinates(struct object3D *cyl, double a, double b, double *x, double *y, double *z) {
@@ -521,13 +520,13 @@ void cylCoordinates(struct object3D *cyl, double a, double b, double *x, double 
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-    struct point3D *p = newPoint(cos(a), sin(a), b);
+    struct point3D *p0 = newPoint(cos(a), sin(a), b);
 
-    matVecMult(cyl->T, p);
-    *x = p->px;
-    *y = p->py;
-    *z = p->pz;
-    free(p);
+    matVecMult(cyl->T, p0);
+    *x = p0->px;
+    *y = p0->py;
+    *z = p0->pz;
+    free(p0);
 }
 
 void planeSample(struct object3D *plane, double *x, double *y, double *z) {
@@ -541,6 +540,7 @@ void planeSample(struct object3D *plane, double *x, double *y, double *z) {
     double a = (double) rand() / (double) RAND_MAX;
     double b = (double) rand() / (double) RAND_MAX;
     (plane->surfaceCoords)(plane, a, b, x, y, z);
+
 }
 
 void sphereSample(struct object3D *sphere, double *x, double *y, double *z) {
@@ -552,12 +552,11 @@ void sphereSample(struct object3D *sphere, double *x, double *y, double *z) {
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-    // references http://mathworld.wolfram.com/SpherePointPicking.html
-// 'a' in [0, 2PI], 'b' in [-PI/2, PI/2]
     double a = 2 * PI * (double) rand() / RAND_MAX;
-    double b = (PI * (double) rand() / RAND_MAX) - PI / 2;
+    double b = PI * ((double) rand() / RAND_MAX - 0.5);
 
     (sphere->surfaceCoords)(sphere, a, b, x, y, z);
+
 }
 
 void cylSample(struct object3D *cyl, double *x, double *y, double *z) {
@@ -567,8 +566,8 @@ void cylSample(struct object3D *cyl, double *x, double *y, double *z) {
     /////////////////////////////////
     // TO DO: Complete this function.
     /////////////////////////////////
-    double b = 2 * PI * (double) rand() / RAND_MAX;
     double a = ((double) rand() / RAND_MAX) - 0.5;
+    double b = 2 * PI * (double) rand() / RAND_MAX;
 
     (cyl->surfaceCoords)(cyl, a, b, x, y, z);
 }
