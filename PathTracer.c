@@ -163,7 +163,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 // reflection     diffPct <= dice < diffPct + reflPct
                 // refraction     diffPct + reflPct <= dice < 1
 
-                struct point3D de;
+                struct point3D new_dirc;
                 ray->R *= R;
                 ray->G *= G;
                 ray->B *= B;
@@ -222,19 +222,19 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #endif
 
 #ifdef __USE_IS
-                    cosWeightedSample(&n, &de);
+                    cosWeightedSample(&n, &new_dirc);
 #else
                     // random point on the hemisphere around pi
                     double a = (double)2 * PI * drand48();
                     double b = (double)(PI * drand48()) - PI / 2;
                     double u = cos(b);
                     double temp = sqrt(1 - pow(u, 2));
-                    de.px = temp * cos(a); 
-                    de.py = temp * sin(a); 
-                    de.pz=u;
+                    new_dirc.px = temp * cos(a);
+                    new_dirc.py = temp * sin(a);
+                    new_dirc.pz=u;
 #endif
 
-                    double dot_res = dot(&n, &de);
+                    double dot_res = dot(&n, &new_dirc);
 
                     ray->R *= dot_res;
                     ray->G *= dot_res;
@@ -244,15 +244,15 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     // reflection happens on both type 0 and type 2
                     // perfect reflect direction
                     double dot_nd = dot(&n, &ray->d);
-                    de.px = ray->d.px - n.px * 2 * dot_nd;
-                    de.py = ray->d.py - n.py * 2 * dot_nd;
-                    de.pz = ray->d.pz - n.pz * 2 * dot_nd;
+                    new_dirc.px = ray->d.px - n.px * 2 * dot_nd;
+                    new_dirc.py = ray->d.py - n.py * 2 * dot_nd;
+                    new_dirc.pz = ray->d.pz - n.pz * 2 * dot_nd;
 
-                    double dot_res = dot(&n, &de);
+                    double dot_res = dot(&n, &new_dirc);
                     if (dot_res < 0) {
-                        de.px *= -1;
-                        de.py *= -1;
-                        de.pz *= -1;
+                        new_dirc.px *= -1;
+                        new_dirc.py *= -1;
+                        new_dirc.pz *= -1;
                         dot_res *= -1;
                     }
                     // fuzzy reflect
@@ -261,10 +261,10 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     rand_p.px = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
                     rand_p.py = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
                     rand_p.pz = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
-                    if (dot(&rand_p, &de) >= 0) {
-                        addVectors(&rand_p, &de);
+                    if (dot(&rand_p, &new_dirc) >= 0) {
+                        addVectors(&rand_p, &new_dirc);
                     } else {
-                        subVectors(&rand_p, &de);
+                        subVectors(&rand_p, &new_dirc);
                     }
                 }
 
@@ -288,17 +288,17 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         double temp2 = -dot(&n, &ray->d);
                         double temp3 = temp1 * temp2 - sqrt(1 - temp1 * temp1 * (1 - temp2 * temp2));
 
-                        de.px = temp1 * ray->d.px + temp3 * n.px;
-                        de.py = temp1 * ray->d.py + temp3 * n.py;
-                        de.pz = temp1 * ray->d.pz + temp3 * n.pz;
+                        new_dirc.px = temp1 * ray->d.px + temp3 * n.px;
+                        new_dirc.py = temp1 * ray->d.py + temp3 * n.py;
+                        new_dirc.pz = temp1 * ray->d.pz + temp3 * n.pz;
 
                         ray->insideOut = 1 - ray->insideOut;
                     }
                     obj = NULL;
                 }
 
-                normalize(&de);
-                struct ray3D *ray_reflect = newRay(&p, &de);
+                normalize(&new_dirc);
+                struct ray3D *ray_reflect = newRay(&p, &new_dirc);
                 ray_reflect->srcN = n;
                 ray_reflect->insideOut = ray->insideOut;
 
