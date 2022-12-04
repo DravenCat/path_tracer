@@ -223,11 +223,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 
 #ifdef __USE_IS
                     cosWeightedSample(&n, &de);
-                    if (dot(&n, &de) < 0) {
-                        de.px *= -1;
-                        de.py *= -1;
-                        de.pz *= -1;
-                    }
 #else
                     // random point on the hemisphere around pi
                     double a = (double)2 * PI * drand48();
@@ -240,12 +235,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #endif
 
                     double dot_res = dot(&n, &de);
-                    if (dot_res < 0) {
-                        de.px *= -1;
-                        de.py *= -1;
-                        de.pz *= -1;
-                        dot_res *= -1;
-                    }
 
                     ray->R *= dot_res;
                     ray->G *= dot_res;
@@ -266,11 +255,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         de.pz *= -1;
                         dot_res *= -1;
                     }
-
-                    // ray->R *= R;
-                    // ray->G *= G;
-                    // ray->B *= B;
-
                     // fuzzy reflect
                     // reference https://en.wikipedia.org/wiki/Normal_distribution
                     struct point3D rand_p;
