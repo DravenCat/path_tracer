@@ -179,7 +179,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         }
                     }
 
-                    // fprintf(stderr, "id: %d\n", currentLS->LSpointer);
                     double lsx, lsy, lsz;
                     (chosen_LS->randomPoint)(chosen_LS, &lsx, &lsy, &lsz);
 
@@ -209,8 +208,8 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                             ray->Ir += ray->R * chosen_LS->col.R * weight;
                             ray->Ig += ray->G * chosen_LS->col.G * weight;
                             ray->Ib += ray->B * chosen_LS->col.B * weight;
-                        } else if (tmp_ex->tranPct <= drand48()) {
-                            CEL = chosen_LS->LSpointer;
+                        } else {
+                            CEL = 0;
                         }
                     }
 
@@ -303,23 +302,25 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 
             } else {
                 //hit the lightsource
-                //At this point, multiply the ray colour by the lightsource colour and return
+                col->R = ray->Ir;
+                col->G = ray->Ig;
+                col->B = ray->Ib;
 #ifdef __USE_ES
                 if (CEL != obj->LSpointer) {
-                    // the explicit light ray from the current call hit the lightsource
-                    ray->Ir += ray->R * R;
-                    ray->Ig += ray->G * G;
-                    ray->Ib += ray->B * B;
+                    col->R += ray->R * R;
+                    col->G += ray->G * G;
+                    col->B += ray->B * B;
                 }
 
-                col->R = ray->Ir > 1 ? 1 : ray->Ir;
-                col->G = ray->Ig > 1 ? 1 : ray->Ig;
-                col->B = ray->Ib > 1 ? 1 : ray->Ib;
 #else
-                col->R = ray->R * R > 1 ? 1 : ray->R * R;
-                col->G = ray->G * G > 1 ? 1 : ray->G * G;
-                col->B = ray->B * B > 1 ? 1 : ray->B * B;
+                col->R += ray->R * R;
+                col->G += ray->G * G;
+                col->B += ray->B * B;
 #endif
+                col->R = min(1, col->R);
+                col->G = min(1, col->G);
+                col->B = min(1, col->B);
+                return;
             }
         } else {
 #ifdef __USE_ES
