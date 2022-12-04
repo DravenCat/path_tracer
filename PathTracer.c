@@ -170,6 +170,18 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 
                 if (dice < diffPct) {
                     // diffusion
+#ifdef __USE_IS
+                    cosWeightedSample(&n, &new_dirc);
+#else
+                    getRandomDirection(&new_dirc);
+#endif
+                    normalize(&new_dirc);
+                    double dn = dot(&n, &new_dirc);
+
+                    ray->R *= dn;
+                    ray->G *= dn;
+                    ray->B *= dn;
+
 #ifdef __USE_ES
                     dice = LS_NUM * drand48();
                     double idx = 0;
@@ -220,19 +232,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     }
 
 #endif
-
-#ifdef __USE_IS
-                    cosWeightedSample(&n, &new_dirc);
-#else
-                    getRandomDirection(&new_dirc);
-#endif
-
-                    double dot_res = dot(&n, &new_dirc);
-
-                    ray->R *= dot_res;
-                    ray->G *= dot_res;
-                    ray->B *= dot_res;
-
                 } else {
                     // reflection happens on both type 0 and type 2
                     // perfect reflect direction
