@@ -142,16 +142,15 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
         findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
 
         if (lambda > 0) {
-            if (obj->texImg) {
-                obj->textureMap(obj->texImg, a, b, &R, &G, &B);
-                //!!!
-                R *= obj->col.R;
-                G *= obj->col.G;
-                B *= obj->col.B;
-            } else {
+            if (obj->texImg == NULL)        // Not textured, use object colour
+            {
                 R = obj->col.R;
                 G = obj->col.G;
                 B = obj->col.B;
+            } else {
+                // Get object colour from the texture given the texture coordinates (a,b), and the texturing function
+                // for the object. Note that we will use textures also for Photon Mapping.
+                obj->textureMap(obj->texImg, a, b, &R, &G, &B);
             }
 
             if (!obj->isLightSource) {
