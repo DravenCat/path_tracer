@@ -224,14 +224,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #ifdef __USE_IS
                     cosWeightedSample(&n, &new_dirc);
 #else
-                    // random point on the hemisphere around pi
-                    double a = (double)2 * PI * drand48();
-                    double b = (double)(PI * drand48()) - PI / 2;
-                    double u = cos(b);
-                    double temp = sqrt(1 - pow(u, 2));
-                    new_dirc.px = temp * cos(a);
-                    new_dirc.py = temp * sin(a);
-                    new_dirc.pz=u;
+                    getRandomDirection(&new_dirc);
 #endif
 
                     double dot_res = dot(&n, &new_dirc);
