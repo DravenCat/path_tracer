@@ -212,6 +212,8 @@ void cylinderSampleRay(struct object3D *cylinder, struct ray3D *ray);
 
 void getRandomDirection(struct point3D *rand_d);
 
+void getMirrorDirection(struct point3D *mirror_d, struct ray3D *ray, struct point3D *n);
+
 // Importance Sampling for BRDF of diffuse surfaces
 void cosWeightedSample(struct point3D *n, struct point3D *d);
 

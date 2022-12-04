@@ -583,6 +583,14 @@ void getRandomDirection(struct point3D *rand_d) {
     rand_d->pz = cos(b);
 }
 
+// r = -2 (d*n)n + d
+void getMirrorDirection(struct point3D *mirror_d, struct ray3D *ray, struct point3D *n) {
+    double dn = dot(n, &ray->d);
+    mirror_d->px = -2 * dn * n->px + ray->d.px;
+    mirror_d->py = -2 * dn * n->py + ray->d.py;
+    mirror_d->pz = -2 * dn * n->pz + ray->d.pz;
+}
+
 //////////////////////////////////
 // Importance sampling for BRDF
 //////////////////////////////////
