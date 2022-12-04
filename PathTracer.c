@@ -191,25 +191,25 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     normalize(&d_pls);
 
                     if (dot(&d_pls, &n) > 0) {
-                        double lambda_pl;
-                        double a1, b1;
-                        struct object3D *temp_obj;
-                        struct point3D p1, n1;
+                        double lambda_ex;
+                        double a_ex, b_ex;
+                        struct object3D *tmp_ex;
+                        struct point3D p_ex, n_ex;
                         struct ray3D *r_pl = newRay(&p, &d_pls);
-                        findFirstHit(r_pl, &lambda_pl, NULL, &temp_obj, &p1, &n1, &a1, &b1);
+                        findFirstHit(r_pl, &lambda_ex, NULL, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
                         free(r_pl);
 
-                        if (temp_obj == chosen_LS) {
+                        if (tmp_ex == chosen_LS) {
                             CEL = chosen_LS->LSpointer;
 
                             // hit the light source
-                            double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &d_pls) * -dot(&n1, &d_pls) /
-                                            pow(lambda_pl, 2);
-                            weight = weight > 1 ? 1 : weight;
+                            double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &d_pls) * -dot(&n_ex, &d_pls) /
+                                            pow(lambda_ex, 2);
+                            weight = min(1, weight);
                             ray->Ir += ray->R * chosen_LS->col.R * weight;
                             ray->Ig += ray->G * chosen_LS->col.G * weight;
                             ray->Ib += ray->B * chosen_LS->col.B * weight;
-                        } else if (temp_obj->tranPct <= drand48()) {
+                        } else if (tmp_ex->tranPct <= drand48()) {
                             CEL = chosen_LS->LSpointer;
                         }
                     }
