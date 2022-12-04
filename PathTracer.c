@@ -169,22 +169,19 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 struct point3D new_dirc;
                 if (dice < diffPct) {
 #ifdef __USE_ES
-                    double dice2 = LS_NUM * drand48();
-                    double idx = 0;
-                    struct object3D *current = object_list;
-                    struct object3D *currentLS = current;
-                    while (idx < dice2) {
-                        if (current->isLightSource) {
-                            currentLS = current;
-                            idx += 1;
+                    double dice2 = drand48();
+                    struct object3D *chosen_LS;
+                    double acc = 0;
+                    for (chosen_LS = object_list; chosen_LS != NULL ; chosen_LS = chosen_LS->next) {
+                        if (chosen_LS->isLightSource) {
+                            acc += chosen_LS->LSweight;
+                            if (dice2 <= acc) break;
                         }
-
-                        current = current->next;
                     }
 
                     // fprintf(stderr, "id: %d\n", currentLS->LSpointer);
                     double lsx, lsy, lsz;
-                    (currentLS->randomPoint)(currentLS, &lsx, &lsy, &lsz);
+                    (chosen_LS->randomPoint)(chosen_LS, &lsx, &lsy, &lsz);
 
                     // intersection point to light source, not normalize direction
                     struct point3D d_pls;
@@ -202,18 +199,18 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         findFirstHit(r_pl, &lambda_pl, NULL, &temp_obj, &p1, &n1, &a1, &b1);
                         free(r_pl);
 
-                        if (temp_obj == currentLS) {
-                            CEL = currentLS->LSpointer;
+                        if (temp_obj == chosen_LS) {
+                            CEL = chosen_LS->LSpointer;
 
                             // hit the light source
-                            double weight = 2 * PI * currentLS->LSweight * dot(&n, &d_pls) * -dot(&n1, &d_pls) /
+                            double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &d_pls) * -dot(&n1, &d_pls) /
                                             pow(lambda_pl, 2);
                             weight = weight > 1 ? 1 : weight;
-                            ray->Ir += ray->R * currentLS->col.R * weight;
-                            ray->Ig += ray->G * currentLS->col.G * weight;
-                            ray->Ib += ray->B * currentLS->col.B * weight;
+                            ray->Ir += ray->R * chosen_LS->col.R * weight;
+                            ray->Ig += ray->G * chosen_LS->col.G * weight;
+                            ray->Ib += ray->B * chosen_LS->col.B * weight;
                         } else if (temp_obj->tranPct <= drand48()) {
-                            CEL = currentLS->LSpointer;
+                            CEL = chosen_LS->LSpointer;
                         }
                     }
 
