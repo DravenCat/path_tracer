@@ -169,6 +169,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 struct point3D new_dirc;
                 if (dice < diffPct) {
 #ifdef __USE_ES
+                    // get a random light source
                     double dice2 = drand48();
                     struct object3D *chosen_LS;
                     double acc = 0;
@@ -179,6 +180,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         }
                     }
 
+                    // generate a random ray from the point to the light source
                     struct ray3D *ray_explict = newRay(&p, &ray->d);
                     double x_es, y_es, z_es;
                     (chosen_LS->randomPoint)(chosen_LS, &x_es, &y_es, &z_es);
@@ -187,6 +189,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     ray_explict->d.pz = z_es - p.pz;
                     normalize(&ray_explict->d);
 
+                    // if the light source is not behind the surface
                     if (dot(&ray_explict->d, &n) > 0) {
                         double lambda_ex;
                         double a_ex, b_ex;
@@ -195,9 +198,10 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         findFirstHit(ray_explict, &lambda_ex, obj, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
 
                         if (tmp_ex == chosen_LS) {
+                            // mark this light source
                             CEL = chosen_LS->LSpointer;
 
-                            // hit the light source
+                            // w = min(1, A*(n*l)(n_ls*-l)/d^2)
                             double d_sqr = pow(x_es - p.px, 2) + pow(y_es - p.py, 2) + pow(z_es - p.pz, 2);
                             double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &ray_explict->d) *
                                     -dot(&n_ex, &ray_explict->d) / d_sqr;
