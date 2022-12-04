@@ -67,32 +67,30 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     // TO DO: Implement this function. See the notes for
     // reference of what to do in here
     /////////////////////////////////////////////////////////////
-    double lambda_res = -1.0;
-    *lambda = lambda_res;
-    struct point3D p_res;
-    struct point3D n_res;
-    double a_res, b_res;
-    (ray->rayPos)(ray, .000001, &ray->p0);
+    double lambda_min = -1.0;
+    *lambda = -1.0;
 
-    struct object3D *currentObj = object_list;
-    while (currentObj) {
-// ignore self-intersections and for rays originating at the center of projection
-        if (currentObj != Os) {
-            (currentObj->intersect)(currentObj, ray, &lambda_res, &p_res, &n_res, &a_res, &b_res);
+//    (ray->rayPos)(ray, .0000000001, &ray->p0);
+    // traverse all the object that is not itself or light source
+    for (struct object3D *i = object_list; i != NULL; i = i->next) {
+        if (i != Os) {
+            struct point3D tmp_p, tmp_n;
+            double tmp_a, tmp_b;
 
-            // get the smaller lambda
-            if (lambda_res > 0 && (lambda_res < *lambda || *lambda <= 0)) {
-                *lambda = lambda_res;
-                memcpy(p, &p_res, sizeof(struct point3D));
-                memcpy(n, &n_res, sizeof(struct point3D));
-                *a = a_res;
-                *b = b_res;
-                *obj = currentObj;
+            //find intersection
+            (i->intersect)(i, ray, &lambda_min, &tmp_p, &tmp_n, &tmp_a, &tmp_b);
+
+            // replace first hit with the smallest positive lambda
+            if (lambda_min > 0 && (lambda_min < *lambda || *lambda <= 0)) {
+                *lambda = lambda_min;
+                memcpy(p, &tmp_p, sizeof(struct point3D));
+                memcpy(n, &tmp_n, sizeof(struct point3D));
+                *a = tmp_a;
+                *b = tmp_b;
+                *obj = i;
             }
         }
-        currentObj = currentObj->next;
     }
-
 }
 
 void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object3D *Os, int CEL) {
