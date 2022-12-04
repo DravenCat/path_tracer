@@ -198,17 +198,18 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                             CEL = chosen_LS->LSpointer;
 
                             // hit the light source
+                            double d_sqr = pow(x_es - p.px, 2) + pow(y_es - p.py, 2) + pow(z_es - p.pz, 2);
                             double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &ray_explict->d) *
-                                    -dot(&n_ex, &ray_explict->d) / pow(lambda_ex, 2);
+                                    -dot(&n_ex, &ray_explict->d) / d_sqr;
                             weight = min(1, weight);
-                            ray->Ir += ray->R * chosen_LS->col.R * weight;
-                            ray->Ig += ray->G * chosen_LS->col.G * weight;
-                            ray->Ib += ray->B * chosen_LS->col.B * weight;
+                            ray->Ir += ray->R * chosen_LS->col.R * weight * R;
+                            ray->Ig += ray->G * chosen_LS->col.G * weight * G;
+                            ray->Ib += ray->B * chosen_LS->col.B * weight * B;
                         } else {
                             CEL = 0;
                         }
                     }
-
+                    free(ray_explict);
 #endif
 
 #ifdef __USE_IS
