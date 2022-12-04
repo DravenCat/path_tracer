@@ -196,7 +196,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         struct object3D *tmp_ex;
                         struct point3D p_ex, n_ex;
                         struct ray3D *r_pl = newRay(&p, &d_pls);
-                        findFirstHit(r_pl, &lambda_ex, NULL, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
+                        findFirstHit(r_pl, &lambda_ex, obj, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
                         free(r_pl);
 
                         if (tmp_ex == chosen_LS) {
