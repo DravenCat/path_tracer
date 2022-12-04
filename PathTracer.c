@@ -206,9 +206,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                             double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &ray_explict->d) *
                                     -dot(&n_ex, &ray_explict->d) / d_sqr;
                             weight = min(1, weight);
-                            ray->Ir += ray->R * chosen_LS->col.R * weight * R;
-                            ray->Ig += ray->G * chosen_LS->col.G * weight * G;
-                            ray->Ib += ray->B * chosen_LS->col.B * weight * B;
+                            ray->Ir += ray->R * chosen_LS->col.R * weight;
+                            ray->Ig += ray->G * chosen_LS->col.G * weight;
+                            ray->Ib += ray->B * chosen_LS->col.B * weight;
                         } else {
                             CEL = 0;
                         }
@@ -227,20 +227,8 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     ray->B *= dn;
 
                 } else {
-                    // reflection happens on both type 0 and type 2
-                    // perfect reflect direction
-                    double dot_nd = dot(&n, &ray->d);
-                    new_dirc.px = ray->d.px - n.px * 2 * dot_nd;
-                    new_dirc.py = ray->d.py - n.py * 2 * dot_nd;
-                    new_dirc.pz = ray->d.pz - n.pz * 2 * dot_nd;
+                    getMirrorDirection(&new_dirc, ray, &n);
 
-                    double dot_res = dot(&n, &new_dirc);
-                    if (dot_res < 0) {
-                        new_dirc.px *= -1;
-                        new_dirc.py *= -1;
-                        new_dirc.pz *= -1;
-                        dot_res *= -1;
-                    }
                     // fuzzy reflect
                     // reference https://en.wikipedia.org/wiki/Normal_distribution
                     struct point3D rand_p;
