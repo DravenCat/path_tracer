@@ -1522,16 +1522,18 @@ void tbn_transform(struct point3D *n, struct point3D *tangent, struct point3D *m
 
 struct ray3D *getRefractedRay(struct ray3D *ray, struct point3D *n, struct object3D *obj, struct point3D *p) {
     // the ray hits a refracting object.
-    double r_idx1 = ray->insideOut ? 1.0 : obj->r_index;
-    double r_idx2 = ray->insideOut ? obj->r_index : 1.0;
+    double n1 = ray->insideOut ? 1.0 : obj->r_index;
+    double n2 = ray->insideOut ? obj->r_index : 1.0;
     double cos_theta1 = dot(&ray->d, n);
     double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
+    double r0 = pow(((n1 - n2) / (n1 + n2)), 2);
+    double reflectance = r0 + ((1 - r0) * pow(1 + cos_theta1, 5));
     // r1 sin_theta1 = r2 sin_theta2
-    double sin_theta2 = (double) (r_idx1 / r_idx2) * sin_theta1;
+    double sin_theta2 = (double) (n1 / n2) * sin_theta1;
 
     // not in total reflection
-    if (sin_theta2 < 1 && sin_theta2 > 0) {
-        double n21 = r_idx1 / r_idx2;
+    if (sin_theta2 < 1 && sin_theta2 > 0 && (drand48() > reflectance)) {
+        double n21 = n1 / n2;
         double dot_product = -dot(n, &ray->d);
         double tmp = sqrt(1 - n21 * n21 * (1 - dot_product * dot_product));
 
