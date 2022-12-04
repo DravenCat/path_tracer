@@ -236,22 +236,16 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     new_dirc.pz += box_muller() * obj->refl_sig;
 
                     if (dice >= diffPct + reflPct) {
-                        double r_idx1 = ray->insideOut ? 1.0 : obj->r_index;
-                        double r_idx2 = ray->insideOut ? obj->r_index : 1.0;
-                        double r0 = pow((r_idx1 - r_idx2) / (r_idx1 + r_idx2), 2);
-
-                        double cos_theta1 = -dot(&ray->d, &n);
+                        double n1 = ray->insideOut ? 1.0 : obj->r_index;
+                        double n2 = ray->insideOut ? obj->r_index : 1.0;
+                        double cos_theta1 = dot(&ray->d, &n);
                         double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
-                        double sin_theta2 = (double) (r_idx1 / r_idx2) * sin_theta1;
+                        double r0 = pow((n1 - n2) / (n1 + n2), 2);
+                        double reflectance = r0 + (1 - r0) * pow((1 + cos_theta1), 5);
+                        double sin_theta2 = (double) (n1 / n2) * sin_theta1;
 
-                        // gives the amount Rs of reflected light
-                        double reflected_light = r0 + (1 - r0) * pow((1 - cos_theta1), 5);
-                        double refracted_light = 1.0 - reflected_light;
-
-
-                        dice = drand48();
-                        if (dice > reflected_light && sin_theta2 < 1 && sin_theta2 > 0) {
-                            double temp1 = r_idx1 / r_idx2;
+                        if (drand48()> reflectance && sin_theta2 < 1 && sin_theta2 > 0) {
+                            double temp1 = n1 / n2;
                             double temp2 = -dot(&n, &ray->d);
                             double temp3 = temp1 * temp2 - sqrt(1 - temp1 * temp1 * (1 - temp2 * temp2));
 
