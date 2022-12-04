@@ -244,14 +244,14 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         double reflectance = r0 + (1 - r0) * pow((1 + cos_theta1), 5);
                         double sin_theta2 = (double) (n1 / n2) * sin_theta1;
 
-                        if (drand48()> reflectance && sin_theta2 < 1 && sin_theta2 > 0) {
-                            double temp1 = n1 / n2;
-                            double temp2 = -dot(&n, &ray->d);
-                            double temp3 = temp1 * temp2 - sqrt(1 - temp1 * temp1 * (1 - temp2 * temp2));
+                        if (sin_theta2 < 1 && sin_theta2 > 0 && (drand48() > reflectance)) {
+                            double n21 = n1 / n2;
+                            double dot_product = -dot(&n, &ray->d);
+                            double tmp = sqrt(1 - n21 * n21 * (1 - dot_product * dot_product));
 
-                            new_dirc.px = temp1 * ray->d.px + temp3 * n.px;
-                            new_dirc.py = temp1 * ray->d.py + temp3 * n.py;
-                            new_dirc.pz = temp1 * ray->d.pz + temp3 * n.pz;
+                            new_dirc.px = n21 * (dot_product * n.px + ray->d.px) - tmp * n.px;
+                            new_dirc.py = n21 * (dot_product * n.py + ray->d.py) - tmp * n.py;
+                            new_dirc.pz = n21 * (dot_product * n.pz + ray->d.pz) - tmp * n.pz;
 
                             ray->insideOut = 1 - ray->insideOut;
                         }
