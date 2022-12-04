@@ -227,48 +227,42 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     ray->B *= dn;
 
                 } else {
+                    // hit an reflective/refractive surface
                     getMirrorDirection(&new_dirc, ray, &n);
 
-                    // fuzzy reflect
-                    // reference https://en.wikipedia.org/wiki/Normal_distribution
-                    struct point3D rand_p;
-                    rand_p.px = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
-                    rand_p.py = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
-                    rand_p.pz = exp(1) * drand48() * cos(2 * PI * drand48()) * obj->refl_sig;
-                    if (dot(&rand_p, &new_dirc) >= 0) {
-                        addVectors(&rand_p, &new_dirc);
-                    } else {
-                        subVectors(&rand_p, &new_dirc);
+                    // disturb the normal by normal-distribution
+                    new_dirc.px += box_muller() * obj->refl_sig;
+                    new_dirc.py += box_muller() * obj->refl_sig;
+                    new_dirc.pz += box_muller() * obj->refl_sig;
+
+                    if (dice >= diffPct + reflPct) {
+                        double r_idx1 = ray->insideOut ? 1.0 : obj->r_index;
+                        double r_idx2 = ray->insideOut ? obj->r_index : 1.0;
+                        double r0 = pow((r_idx1 - r_idx2) / (r_idx1 + r_idx2), 2);
+
+                        double cos_theta1 = -dot(&ray->d, &n);
+                        double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
+                        double sin_theta2 = (double) (r_idx1 / r_idx2) * sin_theta1;
+
+                        // gives the amount Rs of reflected light
+                        double reflected_light = r0 + (1 - r0) * pow((1 - cos_theta1), 5);
+                        double refracted_light = 1.0 - reflected_light;
+
+
+                        dice = drand48();
+                        if (dice > reflected_light && sin_theta2 < 1 && sin_theta2 > 0) {
+                            double temp1 = r_idx1 / r_idx2;
+                            double temp2 = -dot(&n, &ray->d);
+                            double temp3 = temp1 * temp2 - sqrt(1 - temp1 * temp1 * (1 - temp2 * temp2));
+
+                            new_dirc.px = temp1 * ray->d.px + temp3 * n.px;
+                            new_dirc.py = temp1 * ray->d.py + temp3 * n.py;
+                            new_dirc.pz = temp1 * ray->d.pz + temp3 * n.pz;
+
+                            ray->insideOut = 1 - ray->insideOut;
+                        }
+                        obj = NULL;
                     }
-                }
-
-                if (dice >= diffPct + reflPct) {
-                    double r_idx1 = ray->insideOut ? 1.0 : obj->r_index;
-                    double r_idx2 = ray->insideOut ? obj->r_index : 1.0;
-                    double r0 = pow((r_idx1 - r_idx2) / (r_idx1 + r_idx2), 2);
-
-                    double cos_theta1 = -dot(&ray->d, &n);
-                    double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
-                    double sin_theta2 = (double) (r_idx1 / r_idx2) * sin_theta1;
-
-                    // gives the amount Rs of reflected light
-                    double reflected_light = r0 + (1 - r0) * pow((1 - cos_theta1), 5);
-                    double refracted_light = 1.0 - reflected_light;
-
-
-                    dice = drand48();
-                    if (dice > reflected_light && sin_theta2 < 1 && sin_theta2 > 0) {
-                        double temp1 = r_idx1 / r_idx2;
-                        double temp2 = -dot(&n, &ray->d);
-                        double temp3 = temp1 * temp2 - sqrt(1 - temp1 * temp1 * (1 - temp2 * temp2));
-
-                        new_dirc.px = temp1 * ray->d.px + temp3 * n.px;
-                        new_dirc.py = temp1 * ray->d.py + temp3 * n.py;
-                        new_dirc.pz = temp1 * ray->d.pz + temp3 * n.pz;
-
-                        ray->insideOut = 1 - ray->insideOut;
-                    }
-                    obj = NULL;
                 }
 
                 normalize(&new_dirc);
