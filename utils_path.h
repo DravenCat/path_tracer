@@ -280,4 +280,8 @@ void tbn_transform(struct point3D *n, struct point3D *tangent, struct point3D *m
 
 struct ray3D *getRefractedRay(struct ray3D *ray, struct point3D *n, struct object3D *obj, struct point3D *p);
 
+inline double box_muller() {
+    return sqrt( -2 * log(drand48())) * cos(2 * PI * drand48());
+}
+
 #endif
