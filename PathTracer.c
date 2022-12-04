@@ -70,7 +70,7 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     double lambda_min = -1.0;
     *lambda = -1.0;
 
-//    (ray->rayPos)(ray, .0000000001, &ray->p0);
+    (ray->rayPos)(ray, .0000000001, &ray->p0);
     // traverse all the object that is not itself or light source
     for (struct object3D *i = object_list; i != NULL; i = i->next) {
         if (i != Os) {
@@ -156,6 +156,13 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             if (!obj->isLightSource) {
 
                 dice = drand48();
+                double diffPct = obj->diffPct;
+                double reflPct = obj->reflPct;
+                // 0 | diffusion | reflection | refraction | 1
+                // diffusion      dice < diffPct
+                // reflection     diffPct <= dice < diffPct + reflPct
+                // refraction     diffPct + reflPct <= dice < 1
+
                 // type 0 - reflection; type 1 - diffusion; type 2 - refracion
                 double type = dice < obj->tranPct ? 2 : -1;
                 if (type == -1) {
@@ -309,6 +316,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 
                         ray->insideOut = 1 - ray->insideOut;
                     }
+                    obj = NULL;
                 }
 
                 normalize(&de);
@@ -325,7 +333,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 ray_reflect->Ib = ray->Ib;
 #endif
 
-                obj = type == 2 ? NULL : obj;
                 PathTrace(ray_reflect, depth + 1, col, obj, CEL);
 
                 free(ray_reflect);
