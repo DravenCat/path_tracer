@@ -179,31 +179,27 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         }
                     }
 
-                    double lsx, lsy, lsz;
-                    (chosen_LS->randomPoint)(chosen_LS, &lsx, &lsy, &lsz);
+                    struct ray3D *ray_explict = newRay(&p, &ray->d);
+                    double x_es, y_es, z_es;
+                    (chosen_LS->randomPoint)(chosen_LS, &x_es, &y_es, &z_es);
+                    ray_explict->d.px = x_es - p.px;
+                    ray_explict->d.py = y_es - p.py;
+                    ray_explict->d.pz = z_es - p.pz;
+                    normalize(&ray_explict->d);
 
-                    // intersection point to light source, not normalize direction
-                    struct point3D d_pls;
-                    d_pls.px = lsx - p.px;
-                    d_pls.py = lsy - p.py;
-                    d_pls.pz = lsz - p.pz;
-                    normalize(&d_pls);
-
-                    if (dot(&d_pls, &n) > 0) {
+                    if (dot(&ray_explict->d, &n) > 0) {
                         double lambda_ex;
                         double a_ex, b_ex;
                         struct object3D *tmp_ex;
                         struct point3D p_ex, n_ex;
-                        struct ray3D *r_pl = newRay(&p, &d_pls);
-                        findFirstHit(r_pl, &lambda_ex, obj, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
-                        free(r_pl);
+                        findFirstHit(ray_explict, &lambda_ex, obj, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
 
                         if (tmp_ex == chosen_LS) {
                             CEL = chosen_LS->LSpointer;
 
                             // hit the light source
-                            double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &d_pls) * -dot(&n_ex, &d_pls) /
-                                            pow(lambda_ex, 2);
+                            double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &ray_explict->d) *
+                                    -dot(&n_ex, &ray_explict->d) / pow(lambda_ex, 2);
                             weight = min(1, weight);
                             ray->Ir += ray->R * chosen_LS->col.R * weight;
                             ray->Ig += ray->G * chosen_LS->col.G * weight;
