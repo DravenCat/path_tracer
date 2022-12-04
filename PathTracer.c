@@ -163,18 +163,12 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 // reflection     diffPct <= dice < diffPct + reflPct
                 // refraction     diffPct + reflPct <= dice < 1
 
-                // type 0 - reflection; type 1 - diffusion; type 2 - refracion
-                double type = dice < obj->tranPct ? 2 : -1;
-                if (type == -1) {
-                    type = dice < obj->diffPct / (obj->diffPct + obj->reflPct) ? 1 : 0;
-                }
-
                 struct point3D de;
                 ray->R *= R;
                 ray->G *= G;
                 ray->B *= B;
 
-                if (type == 1) {
+                if (dice < diffPct) {
                     // diffusion
 #ifdef __USE_ES
                     dice = LS_NUM * drand48();
@@ -290,7 +284,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     }
                 }
 
-                if (type == 2) {
+                if (dice >= diffPct + reflPct) {
                     double r_idx1 = ray->insideOut ? 1.0 : obj->r_index;
                     double r_idx2 = ray->insideOut ? obj->r_index : 1.0;
                     double r0 = pow((r_idx1 - r_idx2) / (r_idx1 + r_idx2), 2);
