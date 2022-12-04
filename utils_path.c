@@ -575,8 +575,8 @@ void cylSample(struct object3D *cyl, double *x, double *y, double *z) {
 
 // get a random direction by getting a random point on the canonical sphere
 void getRandomDirection(struct point3D *rand_d) {
-    double a = 2 * PI * (double) rand() / RAND_MAX;
-    double b = PI * ((double) rand() / RAND_MAX - 0.5);
+    double a = 2 * PI * drand48();
+    double b = PI * (drand48() - 0.5);
     double tmp = sqrt(1 - pow(cos(b), 2));
     rand_d->px = tmp * cos(a);
     rand_d->py = tmp * sin(a);
