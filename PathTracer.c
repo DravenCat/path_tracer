@@ -241,7 +241,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                         double n2 = ray->insideOut ? obj->r_index : 1.0;
                         double cos_theta1 = dot(&ray->d, &n);
                         double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
-                        double r0 = pow((n1 - n2) / (n1 + n2), 2);
+                        double r0 = pow(((n1 - n2) / (n1 + n2)), 2);
                         double reflectance = r0 + (1 - r0) * pow((1 + cos_theta1), 5);
                         // r1 sin_theta1 = r2 sin_theta2
                         double sin_theta2 = (double) (n1 / n2) * sin_theta1;
