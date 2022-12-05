@@ -1,10 +1,5 @@
-double eyes[4][4] = {{1.0, 0.0, 0.0, 0.0},
-                     {0.0, 1.0, 0.0, 0.0},
-                     {0.0, 0.0, 1.0, 0.0},
-                     {0.0, 0.0, 0.0, 1.0}};
-
 void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
-                      double r_index);
+                      double r_index, double direction);
 
 void hierarchical_circ(double M1[4][4], double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
                       double r_index);
@@ -101,8 +96,8 @@ void buildScene(void) {
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-    o = newCyl(1.0, 0.0, 0.0, 1, 1, 1, .01, 1.54);
-    hierarchical_cyl(15, 1, 0, 0, 0.01, 1.54);
+    hierarchical_cyl(8, 1, 0, 0, 0.01, 1.54, 1);
+    hierarchical_cyl(8, 1, 0, 0, 0.01, 1.54, -1);
 
 
     // Planar light source at top
@@ -116,17 +111,17 @@ void buildScene(void) {
 }
 
 void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
-                      double r_index) {
+                      double r_index, double direction) {
     if (depth > 0) {
-        double coef = (15 - depth);
+        double coef = (8 - depth);
         double M[4][4] = {{1.0, 0.0, 0.0, 0.0},
                           {0.0, 1.0, 0.0, 0.0},
                           {0.0, 0.0, 1.0, 0.0},
                           {0.0, 0.0, 0.0, 1.0}};
-        ScaleMat(M, .5, .5, 8 - 0.25*coef);
+        ScaleMat(M, .4, .4, 8 - 0.5*coef);
         RotateYMat(M, PI/2);
-        TranslateMat(M, 4-0.125*coef, -7 + 1 * coef, 0);
-        RotateYMat(M, coef * PI / 6);
+        TranslateMat(M, direction * (4-0.25*coef), -6 + 1.5 * coef, 0);
+        RotateYMat(M, coef * PI / 3);
         struct object3D *o = newCyl(diffPct, reflPct, tranPct, 1, 1, 1, refl_sig, r_index);
         memcpy(o->T, M, 16 * sizeof(double));
         Translate(o, 0, 0, 5.5);
@@ -134,6 +129,6 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
         loadTexture(o, "./texture/ncyl2.ppm", 2, &texture_list);
         invert(&o->T[0][0], &o->Tinv[0][0]);
         insertObject(o, &object_list);
-        hierarchical_cyl(depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index);
+        hierarchical_cyl(depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
     }
 }
