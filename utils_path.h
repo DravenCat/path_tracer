@@ -214,6 +214,8 @@ void getRandomDirection(struct point3D *rand_d);
 
 void getMirrorDirection(struct point3D *mirror_d, struct ray3D *ray, struct point3D *n);
 
+void getTransDirection(struct point3D *r_d, struct ray3D *ray, struct point3D *n, struct object3D *obj, struct point3D *p);
+
 // Importance Sampling for BRDF of diffuse surfaces
 void cosWeightedSample(struct point3D *n, struct point3D *d);
 

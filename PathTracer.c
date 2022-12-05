@@ -33,8 +33,8 @@
 
 #include "utils_path.h"            // <-- This includes PathTracer.h
 
-#define __USE_IS            // Use importance sampling for diffuse materials
-#define __USE_ES            // Use explicit light sampling
+//#define __USE_IS            // Use importance sampling for diffuse materials
+//#define __USE_ES            // Use explicit light sampling
 // #define __DEBUG			// <-- Use this to turn on/off debugging output
 
 // A couple of global structures and data: An object list, a light list, and the
@@ -70,7 +70,7 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     double lambda_min = -1.0;
     *lambda = -1.0;
 
-    (ray->rayPos)(ray, .0000000001, &ray->p0);
+//    (ray->rayPos)(ray, .0000000001, &ray->p0);
     // traverse all the object that is not itself or light source
     for (struct object3D *i = object_list; i != NULL; i = i->next) {
         if (i != Os) {
@@ -241,12 +241,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 new_dirc.pz += box_muller() * obj->refl_sig;
 
                 if (dice >= diffPct + reflPct) {
-                    struct ray3D *rf = getRefractedRay(ray, &n, obj, &p);
-                    if (rf != NULL) {
-                        memcpy(&new_dirc, &rf->d, sizeof(struct point3D));
-                        ray->insideOut = rf->insideOut;
-                        free(rf);
-                    }
+                    getTransDirection(&new_dirc, ray, &n, obj, &p);
                     obj = NULL;
                 }
             }

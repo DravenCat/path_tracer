@@ -591,6 +591,16 @@ void getMirrorDirection(struct point3D *mirror_d, struct ray3D *ray, struct poin
     mirror_d->pz = -2 * dn * n->pz + ray->d.pz;
 }
 
+void getTransDirection(struct point3D *r_d,
+                       struct ray3D *ray, struct point3D *n, struct object3D *obj, struct point3D *p) {
+    struct ray3D *rf = getRefractedRay(ray, n, obj, p);
+    if (rf != NULL) {
+        memcpy(r_d, &rf->d, sizeof(struct point3D));
+        ray->insideOut = rf->insideOut;
+        free(rf);
+    }
+}
+
 //////////////////////////////////
 // Importance sampling for BRDF
 //////////////////////////////////
