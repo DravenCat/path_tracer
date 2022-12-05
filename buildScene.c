@@ -61,7 +61,6 @@ void buildScene(void) {
     RotateZ(o, PI);
     Translate(o, 0, 0, 20);
     loadTexture(o, "./texture/back.ppm", 1, &texture_list);
-    loadTexture(o, "./texture/nback.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -137,7 +136,7 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
         invert(&o->T[0][0], &o->Tinv[0][0]);
         insertObject(o, &object_list);
 
-        struct object3D *hat = newSphere(0, 1, 0, drand48(), drand48(), drand48(), refl_sig, r_index);
+        struct object3D *hat = newSphere(0, .5, .5, drand48(), drand48(), drand48(), refl_sig, r_index);
         Scale(hat, .6, .6, .6);
         Translate(hat, 2 * direction * (4-0.3*coef), -6 + 1.5 * coef, 0);
         if (direction == 1) {
