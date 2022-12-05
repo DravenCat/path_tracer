@@ -434,7 +434,8 @@ int main(int argc, char *argv[]) {
                 struct ray3D *r_0 = newRay(&pc, d_0);
 
                 // Compute the intersection point p_d with the prefect focus along the optical axis
-                struct point3D *perf_focal = newPoint(0, 0, 5);
+                struct point3D *perf_focal = newPoint(0, 0, -20);
+                matVecMult(cam->C2W, perf_focal);
                 subVectors(&pc, perf_focal);
                 double lambda = dot(perf_focal, &cam->w) / dot(d_0, &cam->w);
                 struct point3D p_d;
