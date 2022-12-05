@@ -247,11 +247,13 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             }
 
             normalize(&new_dirc);
-            ray->srcN = n;
-            memcpy(&ray->p0, &p, sizeof(struct point3D));
-            memcpy(&ray->d, &new_dirc, sizeof(struct point3D));
-            PathTrace(ray, depth + 1, col, obj, CEL);
-
+            next_ray = newRay(&p, &new_dirc);
+            memcpy(next_ray, ray, sizeof(struct ray3D));
+            next_ray->srcN = n;
+            memcpy(&next_ray->p0, &p, sizeof(struct point3D));
+            memcpy(&next_ray->d, &new_dirc, sizeof(struct point3D));
+            PathTrace(next_ray, depth + 1, col, obj, CEL);
+            free(next_ray);
         }
     } else { // if the ray does not hit an object return
         col->R = ray->Ir;
