@@ -236,26 +236,11 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     new_dirc.pz += box_muller() * obj->refl_sig;
 
                     if (dice >= diffPct + reflPct) {
-                        // the ray hits a refracting object.
-                        double n1 = ray->insideOut ? 1.0 : obj->r_index;
-                        double n2 = ray->insideOut ? obj->r_index : 1.0;
-                        double cos_theta1 = dot(&ray->d, &n);
-                        double sin_theta1 = sqrt(1 - pow(cos_theta1, 2));
-                        double r0 = pow(((n1 - n2) / (n1 + n2)), 2);
-                        double reflectance = r0 + ((1 - r0) * pow(1 + cos_theta1, 5));
-                        // r1 sin_theta1 = r2 sin_theta2
-                        double sin_theta2 = (double) (n1 / n2) * sin_theta1;
-
-                        if (sin_theta2 < 1 && sin_theta2 > 0 && (drand48() > reflectance)) {
-                            double n21 = n1 / n2;
-                            double dot_product = -dot(&n, &ray->d);
-                            double tmp = sqrt(1 - n21 * n21 * (1 - dot_product * dot_product));
-
-                            new_dirc.px = n21 * (dot_product * n.px + ray->d.px) - tmp * n.px;
-                            new_dirc.py = n21 * (dot_product * n.py + ray->d.py) - tmp * n.py;
-                            new_dirc.pz = n21 * (dot_product * n.pz + ray->d.pz) - tmp * n.pz;
-
-                            ray->insideOut = 1 - ray->insideOut;
+                        struct ray3D *rf = getRefractedRay(ray, &n, obj, &p);
+                        if (rf != NULL) {
+                            memcpy(&new_dirc, &rf->d, sizeof(struct point3D));
+                            ray->insideOut = rf->insideOut;
+                            free(rf);
                         }
                         obj = NULL;
                     }
