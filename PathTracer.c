@@ -247,22 +247,10 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 }
 
                 normalize(&new_dirc);
-                struct ray3D *ray_reflect = newRay(&p, &new_dirc);
-                ray_reflect->srcN = n;
-                ray_reflect->insideOut = ray->insideOut;
-
-                ray_reflect->R = ray->R;
-                ray_reflect->G = ray->G;
-                ray_reflect->B = ray->B;
-#ifdef __USE_ES
-                ray_reflect->Ir = ray->Ir;
-                ray_reflect->Ig = ray->Ig;
-                ray_reflect->Ib = ray->Ib;
-#endif
-
-                PathTrace(ray_reflect, depth + 1, col, obj, CEL);
-
-                free(ray_reflect);
+                ray->srcN = n;
+                memcpy(&ray->p0, &p, sizeof(struct point3D));
+                memcpy(&ray->d, &new_dirc, sizeof(struct point3D));
+                PathTrace(ray, depth + 1, col, obj, CEL);
 
             } else {
                 //hit the lightsource
