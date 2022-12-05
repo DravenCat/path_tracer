@@ -104,8 +104,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
     //   *Os    - 'Object source' is a pointer to the object from which the ray
     //            originates so you can discard self-intersections due to numerical
     //            errors. NULL for rays originating from the center of projection.
-    // CEL - can tell the recursive call whether or not the explicit light ray from the current call hit the lightsource.
-//        Use it to decide whether to accumulate light or not if the recursive call hits the lightsource
 
     double lambda;            // Lambda at intersection
     double a, b;            // Texture coordinates
@@ -114,181 +112,158 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
     struct point3D n;        // Normal at intersection
     double R, G, B;            // Handy in case you need to keep track of some RGB colour value
     double dice;            // Handy to keep a random value
+    struct ray3D *next_ray;    // For the new ray to be used in recursive calls
 
-    double max_num = max(ray->R, ray->G);
-    max_num = max(max_num, ray->B);
-    dice = 0.5 * drand48();
-    //!!!
-    // dice = drand48();
-    //double temp_double = (1 - (ray->R + ray->G + ray->B)/3) / MAX_DEPTH; // roll dice to kill
-    // Max recursion depth reached. Return black (no light coming into pixel from this path).
-    // or not pass Russian Roulette check
-    if (max_num < dice || depth > MAX_DEPTH) {
-#ifdef __USE_ES
+    if (depth > MAX_DEPTH)    // Max recursion depth reached. Return black (no light coming into pixel from this path).
+    {
         col->R = ray->Ir;    // These are accumulators, initialized at 0. Whenever we find a source of light these
         col->G = ray->Ig;    // get incremented accordingly. At the end of the recursion, we return whatever light
         col->B = ray->Ib;    // we accumulated into these three values.
-#else
-        col->R = 0;
-        col->G = 0;
-        col->B = 0;
-#endif
         return;
-    } else {
-        ///////////////////////////////////////////////////////
-        // TO DO: Complete this function. Refer to the notes
-        // if you are unsure what to do here.
-        ///////////////////////////////////////////////////////
-        findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
+    }
 
-        if (lambda > 0) {
-            if (obj->texImg == NULL)        // Not textured, use object colour
-            {
-                R = obj->col.R;
-                G = obj->col.G;
-                B = obj->col.B;
-            } else {
-                // Get object colour from the texture given the texture coordinates (a,b), and the texturing function
-                // for the object. Note that we will use textures also for Photon Mapping.
-                obj->textureMap(obj->texImg, a, b, &R, &G, &B);
-            }
-
-            if (!obj->isLightSource) {
-
-                dice = drand48();
-                double diffPct = obj->diffPct;
-                double reflPct = obj->reflPct;
-                // 0 | diffusion | reflection | refraction | 1
-                // diffusion      dice < diffPct
-                // reflection     diffPct <= dice < diffPct + reflPct
-                // refraction     diffPct + reflPct <= dice < 1
-
-                ray->R *= R;
-                ray->G *= G;
-                ray->B *= B;
-                struct point3D new_dirc;
-                if (dice < diffPct) {
-#ifdef __USE_ES
-                    // get a random light source
-                    double dice2 = drand48();
-                    struct object3D *chosen_LS;
-                    double acc = 0;
-                    for (chosen_LS = object_list; chosen_LS != NULL ; chosen_LS = chosen_LS->next) {
-                        if (chosen_LS->isLightSource) {
-                            acc += chosen_LS->LSweight;
-                            if (dice2 <= acc) break;
-                        }
-                    }
-
-                    // generate a random ray from the point to the light source
-                    struct ray3D *ray_explict = newRay(&p, &ray->d);
-                    double x_es, y_es, z_es;
-                    (chosen_LS->randomPoint)(chosen_LS, &x_es, &y_es, &z_es);
-                    ray_explict->d.px = x_es - p.px;
-                    ray_explict->d.py = y_es - p.py;
-                    ray_explict->d.pz = z_es - p.pz;
-                    normalize(&ray_explict->d);
-
-                    // if the light source is not behind the surface
-                    if (dot(&ray_explict->d, &n) > 0) {
-                        double lambda_ex;
-                        double a_ex, b_ex;
-                        struct object3D *tmp_ex;
-                        struct point3D p_ex, n_ex;
-                        findFirstHit(ray_explict, &lambda_ex, obj, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
-
-                        if (tmp_ex == chosen_LS) {
-                            // mark this light source
-                            CEL = chosen_LS->LSpointer;
-
-                            // w = min(1, A*(n*l)(n_ls*-l)/d^2)
-                            double d_sqr = pow(x_es - p.px, 2) + pow(y_es - p.py, 2) + pow(z_es - p.pz, 2);
-                            double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &ray_explict->d) *
-                                    -dot(&n_ex, &ray_explict->d) / d_sqr;
-                            weight = min(1, weight);
-                            ray->Ir += ray->R * chosen_LS->col.R * weight;
-                            ray->Ig += ray->G * chosen_LS->col.G * weight;
-                            ray->Ib += ray->B * chosen_LS->col.B * weight;
-                        } else {
-                            CEL = 0;
-                        }
-                    }
-                    free(ray_explict);
-#endif
-
-#ifdef __USE_IS
-                    cosWeightedSample(&n, &new_dirc);
-#else
-                    getRandomDirection(&new_dirc);
-#endif
-                    double dn = dot(&n, &new_dirc);
-                    ray->R *= dn;
-                    ray->G *= dn;
-                    ray->B *= dn;
-
-                } else {
-                    // hit an reflective/refractive surface
-                    getMirrorDirection(&new_dirc, ray, &n);
-
-                    // disturb the normal by normal-distribution
-                    new_dirc.px += box_muller() * obj->refl_sig;
-                    new_dirc.py += box_muller() * obj->refl_sig;
-                    new_dirc.pz += box_muller() * obj->refl_sig;
-
-                    if (dice >= diffPct + reflPct) {
-                        struct ray3D *rf = getRefractedRay(ray, &n, obj, &p);
-                        if (rf != NULL) {
-                            memcpy(&new_dirc, &rf->d, sizeof(struct point3D));
-                            ray->insideOut = rf->insideOut;
-                            free(rf);
-                        }
-                        obj = NULL;
-                    }
-                }
-
-                normalize(&new_dirc);
-                ray->srcN = n;
-                memcpy(&ray->p0, &p, sizeof(struct point3D));
-                memcpy(&ray->d, &new_dirc, sizeof(struct point3D));
-                PathTrace(ray, depth + 1, col, obj, CEL);
-
-            } else {
-                //hit the lightsource
-                col->R = ray->Ir;
-                col->G = ray->Ig;
-                col->B = ray->Ib;
-#ifdef __USE_ES
-                if (CEL != obj->LSpointer) {
-                    col->R += ray->R * R;
-                    col->G += ray->G * G;
-                    col->B += ray->B * B;
-                }
-
-#else
-                col->R += ray->R * R;
-                col->G += ray->G * G;
-                col->B += ray->B * B;
-#endif
-                col->R = min(1, col->R);
-                col->G = min(1, col->G);
-                col->B = min(1, col->B);
-                return;
-            }
+    ///////////////////////////////////////////////////////
+    // TO DO: Complete this function. Refer to the notes
+    // if you are unsure what to do here.
+    ///////////////////////////////////////////////////////
+    findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
+    if (lambda > 0) {
+        if (obj->texImg == NULL)        // Not textured, use object colour
+        {
+            R = obj->col.R;
+            G = obj->col.G;
+            B = obj->col.B;
         } else {
-#ifdef __USE_ES
+            // Get object colour from the texture given the texture coordinates (a,b), and the texturing function
+            // for the object. Note that we will use textures also for Photon Mapping.
+            obj->textureMap(obj->texImg, a, b, &R, &G, &B);
+        }
+        if (obj->isLightSource) {
             col->R = ray->Ir;
             col->G = ray->Ig;
             col->B = ray->Ib;
+#ifdef __USE_ES
+            if (CEL != obj->LSpointer) {
+                col->R += ray->R * R;
+                col->G += ray->G * G;
+                col->B += ray->B * B;
+            }
+
 #else
-            col->R = 0;
-            col->G = 0;
-            col->B = 0;
+            col->R += ray->R * R;
+            col->G += ray->G * G;
+            col->B += ray->B * B;
+#endif
+            col->R = min(1, col->R);
+            col->G = min(1, col->G);
+            col->B = min(1, col->B);
+            return;
+        } else {
+
+            dice = drand48();
+            double diffPct = obj->diffPct;
+            double reflPct = obj->reflPct;
+            // 0 | diffusion | reflection | refraction | 1
+            // diffusion      dice < diffPct
+            // reflection     diffPct <= dice < diffPct + reflPct
+            // refraction     diffPct + reflPct <= dice < 1
+
+            ray->R *= R;
+            ray->G *= G;
+            ray->B *= B;
+            struct point3D new_dirc;
+            if (dice < diffPct) {
+#ifdef __USE_ES
+                // get a random light source
+                double dice2 = drand48();
+                struct object3D *chosen_LS;
+                double acc = 0;
+                for (chosen_LS = object_list; chosen_LS != NULL ; chosen_LS = chosen_LS->next) {
+                    if (chosen_LS->isLightSource) {
+                        acc += chosen_LS->LSweight;
+                        if (dice2 <= acc) break;
+                    }
+                }
+
+                // generate a random ray from the point to the light source
+                struct ray3D *ray_explict = newRay(&p, &ray->d);
+                double x_es, y_es, z_es;
+                (chosen_LS->randomPoint)(chosen_LS, &x_es, &y_es, &z_es);
+                ray_explict->d.px = x_es - p.px;
+                ray_explict->d.py = y_es - p.py;
+                ray_explict->d.pz = z_es - p.pz;
+                normalize(&ray_explict->d);
+
+                // if the light source is not behind the surface
+                if (dot(&ray_explict->d, &n) > 0) {
+                    double lambda_ex;
+                    double a_ex, b_ex;
+                    struct object3D *tmp_ex;
+                    struct point3D p_ex, n_ex;
+                    findFirstHit(ray_explict, &lambda_ex, obj, &tmp_ex, &p_ex, &n_ex, &a_ex, &b_ex);
+
+                    if (tmp_ex == chosen_LS) {
+                        // mark this light source
+                        CEL = chosen_LS->LSpointer;
+
+                        // w = min(1, A*(n*l)(n_ls*-l)/d^2)
+                        double d_sqr = pow(x_es - p.px, 2) + pow(y_es - p.py, 2) + pow(z_es - p.pz, 2);
+                        double weight = 2 * PI * chosen_LS->LSweight * dot(&n, &ray_explict->d) *
+                                        -dot(&n_ex, &ray_explict->d) / d_sqr;
+                        weight = min(1, weight);
+                        ray->Ir += ray->R * chosen_LS->col.R * weight;
+                        ray->Ig += ray->G * chosen_LS->col.G * weight;
+                        ray->Ib += ray->B * chosen_LS->col.B * weight;
+                    } else {
+                        CEL = 0;
+                    }
+                }
+                free(ray_explict);
 #endif
 
-            return;
-        }
-    }
+#ifdef __USE_IS
+                cosWeightedSample(&n, &new_dirc);
+#else
+                getRandomDirection(&new_dirc);
+#endif
+                double dn = dot(&n, &new_dirc);
+                ray->R *= dn;
+                ray->G *= dn;
+                ray->B *= dn;
 
+            } else {
+                // hit an reflective/refractive surface
+                getMirrorDirection(&new_dirc, ray, &n);
+
+                // disturb the normal by normal-distribution
+                new_dirc.px += box_muller() * obj->refl_sig;
+                new_dirc.py += box_muller() * obj->refl_sig;
+                new_dirc.pz += box_muller() * obj->refl_sig;
+
+                if (dice >= diffPct + reflPct) {
+                    struct ray3D *rf = getRefractedRay(ray, &n, obj, &p);
+                    if (rf != NULL) {
+                        memcpy(&new_dirc, &rf->d, sizeof(struct point3D));
+                        ray->insideOut = rf->insideOut;
+                        free(rf);
+                    }
+                    obj = NULL;
+                }
+            }
+
+            normalize(&new_dirc);
+            ray->srcN = n;
+            memcpy(&ray->p0, &p, sizeof(struct point3D));
+            memcpy(&ray->d, &new_dirc, sizeof(struct point3D));
+            PathTrace(ray, depth + 1, col, obj, CEL);
+
+        }
+    } else { // if the ray does not hit an object return
+        col->R = ray->Ir;
+        col->G = ray->Ig;
+        col->B = ray->Ib;
+        return;
+    }
 }
 
 int main(int argc, char *argv[]) {
