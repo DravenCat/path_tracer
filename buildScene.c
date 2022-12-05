@@ -1,8 +1,8 @@
 void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
                       double r_index, double direction);
 
-void hierarchical_circ(double M1[4][4], double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
-                      double r_index);
+void hierarchical_circ(double ref[4][4], double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
+                      double r_index, double direction);
 
 void buildScene(void) {
     // Sets up all objets in the scene. This involves creating each object,
@@ -114,20 +114,22 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
                       double r_index, double direction) {
     if (depth > 0) {
         double coef = (8 - depth);
-        double M[4][4] = {{1.0, 0.0, 0.0, 0.0},
-                          {0.0, 1.0, 0.0, 0.0},
-                          {0.0, 0.0, 1.0, 0.0},
-                          {0.0, 0.0, 0.0, 1.0}};
-        ScaleMat(M, .4, .4, 8 - 0.6*coef);
-        RotateYMat(M, PI/2);
-        TranslateMat(M, direction * (4-0.3*coef), -6 + 1.5 * coef, 0);
-        if (direction == 1) {
-            RotateYMat(M, coef * PI / 3);
-        } else {
-            RotateYMat(M, coef * PI / 3.5);
-        }
         struct object3D *o = newCyl(diffPct, reflPct, tranPct, 1, 1, 1, refl_sig, r_index);
-        memcpy(o->T, M, 16 * sizeof(double));
+        double ref[4][4] = {{1.0, 0.0, 0.0, 0.0},
+                            {0.0, 1.0, 0.0, 0.0},
+                            {0.0, 0.0, 1.0, 0.0},
+                            {0.0, 0.0, 0.0, 1.0}};
+        Scale(o, .4, .4, 8 - 0.6 * coef);
+        RotateY(o, PI / 2);
+        Translate(o, direction * (4 - 0.3 * coef), -6 + 1.5 * coef, 0);
+        TranslateMat(ref, direction * (4 - 0.3 * coef), -6 + 1.5 * coef, 0);
+        if (direction == 1) {
+            RotateY(o, coef * PI / 3);
+            RotateYMat(ref, coef * PI / 3);
+        } else {
+            RotateY(o, coef * PI / 3.5);
+            RotateYMat(ref, coef * PI / 3.5);
+        }
         Translate(o, 0, 0, 5.5);
         loadTexture(o, "./texture/cyl2.ppm", 1, &texture_list);
         loadTexture(o, "./texture/ncyl2.ppm", 2, &texture_list);
@@ -146,6 +148,23 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
         invert(&hat->T[0][0], &hat->Tinv[0][0]);
         insertObject(hat, &object_list);
 
+        hierarchical_circ(ref, depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
         hierarchical_cyl(depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
+    }
+}
+
+void hierarchical_circ(double ref[4][4], double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
+                       double r_index, double direction) {
+    if (depth > 0) {
+        double coef = (8 - depth);
+        struct object3D *o = newSphere(0, 1, 0, drand48(), drand48(), drand48(), refl_sig, r_index);
+        Scale(o, .25, .25, .25);
+        Translate(o, direction * (2 - 0.4 * coef), .7, 0);
+        RotateX(o, coef * PI / 3 );
+        matMult(ref, o->T);
+        Translate(o, 0, 0, 5.5);
+        invert(&o->T[0][0], &o->Tinv[0][0]);
+        insertObject(o, &object_list);
+        hierarchical_circ(ref, depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
     }
 }
