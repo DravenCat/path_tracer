@@ -118,9 +118,9 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
                           {0.0, 1.0, 0.0, 0.0},
                           {0.0, 0.0, 1.0, 0.0},
                           {0.0, 0.0, 0.0, 1.0}};
-        ScaleMat(M, .4, .4, 8 - 0.5*coef);
+        ScaleMat(M, .4, .4, 8 - 0.7*coef);
         RotateYMat(M, PI/2);
-        TranslateMat(M, direction * (4-0.25*coef), -6 + 1.5 * coef, 0);
+        TranslateMat(M, direction * (4-0.35*coef), -6 + 1.5 * coef, 0);
         RotateYMat(M, coef * PI / 3);
         struct object3D *o = newCyl(diffPct, reflPct, tranPct, 1, 1, 1, refl_sig, r_index);
         memcpy(o->T, M, 16 * sizeof(double));
