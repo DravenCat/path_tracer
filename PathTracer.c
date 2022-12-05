@@ -42,7 +42,7 @@
 struct object3D *object_list;
 struct textureNode *texture_list;
 unsigned long int NUM_RAYS;
-int LS_NUM;
+int LS_LIST;
 int MAX_DEPTH;
 
 #include "buildScene.c"            // Import scene definition
@@ -307,6 +307,7 @@ int main(int argc, char *argv[]) {
     MAX_DEPTH = atoi(argv[2]);
     num_samples = atoi(argv[3]);
     strcpy(&output_name[0], argv[4]);
+    LS_LIST = 0;
 
     fprintf(stderr, "Rendering image at %d x %d\n", sx, sx);
     fprintf(stderr, "Recursion depth = %d\n", MAX_DEPTH);
@@ -379,7 +380,6 @@ int main(int argc, char *argv[]) {
     printmatrix(cam->W2C);
     fprintf(stderr, "\n");
 
-    LS_NUM = 0;
     // Update light source weights - will give you weights for each light source that add up to 1
     obj = object_list;
     pct = 0;
@@ -392,8 +392,8 @@ int main(int argc, char *argv[]) {
     while (obj != NULL) {
         if (obj->isLightSource) {
             obj->LSweight /= pct;
-            LS_NUM += 1;
-            obj->LSpointer = LS_NUM;
+            LS_LIST += 1;
+            obj->LSpointer = LS_LIST;
         }
         obj = obj->next;
     }
