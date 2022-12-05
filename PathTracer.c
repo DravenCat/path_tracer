@@ -434,16 +434,9 @@ int main(int argc, char *argv[]) {
                 struct ray3D *r_0 = newRay(&pc, d_0);
 
                 // Compute the intersection point p_d with the prefect focus along the optical axis
-                struct point3D *fp = newPoint(0, 0, -20);
-                matVecMult(cam->C2W,fp);
-//                if (fp->pz != 5) {
-//                    fprintf(stderr, "Panic, should be %f\n", fp->pz);
-//                    exit(1);
-//                }
-                struct point3D fpc;
-                memcpy(&fpc,fp,sizeof(struct point3D));
-                subVectors(&pc, &fpc); // fpc = fp - c
-                double lambda = dot(&fpc, &cam->w)/dot(d_0, &cam->w);
+                struct point3D *perf_focal = newPoint(0, 0, 5);
+                subVectors(&pc, perf_focal);
+                double lambda = dot(perf_focal, &cam->w) / dot(d_0, &cam->w);
                 struct point3D p_d;
                 r_0->rayPos(r_0, lambda, &p_d);
 
@@ -456,7 +449,7 @@ int main(int argc, char *argv[]) {
 
                 // Create a ray and do the raytracing for this pixel.
                 initRay(&ray, &p_0, &d, 1);
-                free(fp);
+                free(perf_focal);
                 free(d_0);
                 free(r_0);
 #else
