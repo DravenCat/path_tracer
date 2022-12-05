@@ -1,3 +1,14 @@
+double eyes[4][4] = {{1.0, 0.0, 0.0, 0.0},
+                     {0.0, 1.0, 0.0, 0.0},
+                     {0.0, 0.0, 1.0, 0.0},
+                     {0.0, 0.0, 0.0, 1.0}};
+
+void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
+                      double r_index);
+
+void hierarchical_circ(double M1[4][4], double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
+                      double r_index);
+
 void buildScene(void) {
     // Sets up all objets in the scene. This involves creating each object,
     // defining the transformations needed to shape and position it as
@@ -31,27 +42,46 @@ void buildScene(void) {
     struct point3D p;
 
     // Cornell box
-    o = newSphere(1.0, 0.0, 0.0, .75, .25, .25, .05, 1.4);    // Left
-    Scale(o, 500, 500, 500);
-    Translate(o, -510, 0, 5);
+    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .02, 1.4);    // Left
+    Scale(o, 20, 20, 20);
+    RotateY(o, PI / 2);
+    Translate(o, -14, 0, 10);
+    loadTexture(o, "./texture/background.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nbackground.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-    o = newSphere(1.0, 0.0, 0.0, .25, .25, .75, .05, 1.4);        // Right
-    Scale(o, 500, 500, 500);
-    Translate(o, 510, 0, 5);
+    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .02, 1.4);    // Right
+    Scale(o, 20, 20, 20);
+    RotateY(o, PI / 2);
+    Translate(o, 14, 0, 10);
+    loadTexture(o, "./texture/background.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nbackground.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-    o = newSphere(1.0, 0.0, 0.0, .75, .75, .75, .05, 1.4);        // Back
-    Scale(o, 500, 500, 500);
-    Translate(o, 0, 0, 515);
+
+    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .05, 1.4);        // Back
+    Scale(o, 15, 12, 12);
+    RotateZ(o, PI);
+    Translate(o, 0, 0, 20);
+    loadTexture(o, "./texture/arcDoor.ppm", 1, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-    o = newSphere(1.0, 0.0, 0.0, .75, .75, .75, .02, 1.4);    // Bottom
+
+    o = newSphere(1.0, 0.0, 0.0, .75, .75, .75, .05, 1.4);        // front
     Scale(o, 500, 500, 500);
-    Translate(o, 0, -510, 5);
+    Translate(o, 0, 0, -515);
+    invert(&o->T[0][0], &o->Tinv[0][0]);
+    insertObject(o, &object_list);
+
+    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .02, 1.4);    // Bottom
+    Scale(o, 20, 20, 20);
+    RotateX(o, PI / 2);
+    Translate(o, 0, -10, 10);
+    loadTexture(o, "./texture/floor.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nfloor.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -61,46 +91,49 @@ void buildScene(void) {
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-    // Two spheres scene
-    o = newSphere(0.0, 0.0, 1.0, .99, .99, .99, .01, 1.54);        // Refract
-    Scale(o, 3.75, 3.75, 3.75);
-    Translate(o, -5, -4.0, 4.5);
+    // tree
+    o = newCyl(1.0, 0.0, 0.0, 1, 1, 1, .01, 1.54);
+    Scale(o, 1, 1, 20);
+    RotateX(o, PI / 2);
+    Translate(o, 0, -2, 5.5);
+    loadTexture(o, "./texture/cyl1.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/ncyl1.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-    o = newSphere(0.0, 1.0, 0.0, .99, .99, .99, .05, 2.47);        // Reflect
-    Scale(o, 3.75, 3.75, 3.75);
-    Translate(o, 4, -3.75, 6.5);
-    invert(&o->T[0][0], &o->Tinv[0][0]);
-    insertObject(o, &object_list);
+    o = newCyl(1.0, 0.0, 0.0, 1, 1, 1, .01, 1.54);
+    hierarchical_cyl(15, 1, 0, 0, 0.01, 1.54);
 
-/*
- // Ring of refracting spheres
- for (int i=0; i<5;i++)
- {
-  o=newSphere(0.0,0.0,1.0,.99,.99,.99,.01,1.45+(.1*i));
-  Scale(o,1.75,1.75,1.75);
-  Translate(o,3.25*cos(2*PI*i/5),-2.45,3+3.25*sin(2*PI*i/5));
-  invert(&o->T[0][0],&o->Tinv[0][0]);
-  insertObject(o,&object_list);
- }
-
- for (int i=0; i<7;i++)
- {
-  o=newSphere(0.0,0.0,1.0,.99,.99,.99,.01,2.00+(.05*i));
-  Scale(o,1.75,1.75,1.75);
-  Translate(o,4.60*cos(2*PI*i/7),-6.35,3+4.60*sin(2*PI*i/7));
-  invert(&o->T[0][0],&o->Tinv[0][0]);
-  insertObject(o,&object_list);
- }
-*/
 
     // Planar light source at top
     o = newPlane(1.00, 0.00, 0.0, 1.0, 1.0, 1.0, 0.0, 1.54);
-    Scale(o, .5, 2.5, 1);
+    Scale(o, 2, 8, 3);
     RotateX(o, PI / 2);
-    Translate(o, 0, 9.995, 5);
+    Translate(o, 0, 10, 9);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     o->isLightSource = 1;
     insertObject(o, &object_list);
+}
+
+void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranPct, double refl_sig,
+                      double r_index) {
+    if (depth > 0) {
+        double coef = (15 - depth);
+        double M[4][4] = {{1.0, 0.0, 0.0, 0.0},
+                          {0.0, 1.0, 0.0, 0.0},
+                          {0.0, 0.0, 1.0, 0.0},
+                          {0.0, 0.0, 0.0, 1.0}};
+        ScaleMat(M, .5, .5, 8 - 0.25*coef);
+        RotateYMat(M, PI/2);
+        TranslateMat(M, 4-0.125*coef, -7 + 1 * coef, 0);
+        RotateYMat(M, coef * PI / 6);
+        struct object3D *o = newCyl(diffPct, reflPct, tranPct, 1, 1, 1, refl_sig, r_index);
+        memcpy(o->T, M, 16 * sizeof(double));
+        Translate(o, 0, 0, 5.5);
+        loadTexture(o, "./texture/cyl2.ppm", 1, &texture_list);
+        loadTexture(o, "./texture/ncyl2.ppm", 2, &texture_list);
+        invert(&o->T[0][0], &o->Tinv[0][0]);
+        insertObject(o, &object_list);
+        hierarchical_cyl(depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index);
+    }
 }
