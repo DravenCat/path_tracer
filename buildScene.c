@@ -41,8 +41,8 @@ void buildScene(void) {
     Scale(o, 20, 20, 20);
     RotateY(o, PI / 2);
     Translate(o, -14, 0, 10);
-    loadTexture(o, "./texture/background.ppm", 1, &texture_list);
-    loadTexture(o, "./texture/nbackground.ppm", 2, &texture_list);
+    loadTexture(o, "./texture/wall.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nwall.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -50,8 +50,8 @@ void buildScene(void) {
     Scale(o, 20, 20, 20);
     RotateY(o, PI / 2);
     Translate(o, 14, 0, 10);
-    loadTexture(o, "./texture/background.ppm", 1, &texture_list);
-    loadTexture(o, "./texture/nbackground.ppm", 2, &texture_list);
+    loadTexture(o, "./texture/wall.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nwall.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -60,7 +60,8 @@ void buildScene(void) {
     Scale(o, 15, 12, 12);
     RotateZ(o, PI);
     Translate(o, 0, 0, 20);
-    loadTexture(o, "./texture/arcDoor.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/back.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nback.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -75,8 +76,8 @@ void buildScene(void) {
     Scale(o, 20, 20, 20);
     RotateX(o, PI / 2);
     Translate(o, 0, -10, 10);
-    loadTexture(o, "./texture/floor.ppm", 1, &texture_list);
-    loadTexture(o, "./texture/nfloor.ppm", 2, &texture_list);
+    loadTexture(o, "./texture/ground.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nground.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -91,8 +92,8 @@ void buildScene(void) {
     Scale(o, 1, 1, 20);
     RotateX(o, PI / 2);
     Translate(o, 0, -2, 5.5);
-    loadTexture(o, "./texture/cyl1.ppm", 1, &texture_list);
-    loadTexture(o, "./texture/ncyl1.ppm", 2, &texture_list);
+    loadTexture(o, "./texture/body.ppm", 1, &texture_list);
+    loadTexture(o, "./texture/nbody.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
@@ -131,8 +132,8 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
             RotateYMat(ref, coef * PI / 3.5);
         }
         Translate(o, 0, 0, 5.5);
-        loadTexture(o, "./texture/cyl2.ppm", 1, &texture_list);
-        loadTexture(o, "./texture/ncyl2.ppm", 2, &texture_list);
+        loadTexture(o, "./texture/leg.ppm", 1, &texture_list);
+        loadTexture(o, "./texture/nleg.ppm", 2, &texture_list);
         invert(&o->T[0][0], &o->Tinv[0][0]);
         insertObject(o, &object_list);
 
