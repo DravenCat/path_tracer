@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
     double du, dv;            // Increase along u and v directions for pixel coordinates
     struct point3D pc, d;        // Point structures to keep the coordinates of a pixel and
     // the direction or a ray
-    struct ray3D *ray;        // Structure to keep the ray from e to a pixel
+    struct ray3D ray;        // Structure to keep the ray from e to a pixel
     struct colourRGB col;        // Return colour for pixels
     int i, j, k;            // Counters for pixel coordinates and samples
     double *rgbIm;            // Image is now double precision floating point since we
@@ -425,20 +425,17 @@ int main(int argc, char *argv[]) {
                 normalize(&d);
 
                 // Create a ray and do the raytracing for this pixel.
-                ray = newRay(&pc, &d);
+                initRay(&ray, &pc, &d, 1);
 
-                if (ray != NULL) {
-                    wt = *(wght + i + (j * sx));
-                    PathTrace(ray, 1, &col, NULL, 0);
-                    (*(rgbIm + ((i + (j * sx)) * 3) + 0)) += col.R * pow(2, -log(wt));
-                    (*(rgbIm + ((i + (j * sx)) * 3) + 1)) += col.G * pow(2, -log(wt));
-                    (*(rgbIm + ((i + (j * sx)) * 3) + 2)) += col.B * pow(2, -log(wt));
-                    wt += col.R;
-                    wt += col.G;
-                    wt += col.B;
-                    *(wght + i + (j * sx)) = wt;
-                    free(ray);
-                }
+                wt = *(wght + i + (j * sx));
+                PathTrace(&ray, 1, &col, NULL, 0);
+                (*(rgbIm + ((i + (j * sx)) * 3) + 0)) += col.R * pow(2, -log(wt));
+                (*(rgbIm + ((i + (j * sx)) * 3) + 1)) += col.G * pow(2, -log(wt));
+                (*(rgbIm + ((i + (j * sx)) * 3) + 2)) += col.B * pow(2, -log(wt));
+                wt += col.R;
+                wt += col.G;
+                wt += col.B;
+                *(wght + i + (j * sx)) = wt;
             } // end for i
         } // end for j
         if (k % 25 == 0) dataOutput(rgbIm, sx, &output_name[0]);        // Update output image every 25 passes
