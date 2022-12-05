@@ -118,10 +118,14 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
                           {0.0, 1.0, 0.0, 0.0},
                           {0.0, 0.0, 1.0, 0.0},
                           {0.0, 0.0, 0.0, 1.0}};
-        ScaleMat(M, .4, .4, 8 - 0.7*coef);
+        ScaleMat(M, .4, .4, 8 - 0.6*coef);
         RotateYMat(M, PI/2);
-        TranslateMat(M, direction * (4-0.35*coef), -6 + 1.5 * coef, 0);
-        RotateYMat(M, coef * PI / 3);
+        TranslateMat(M, direction * (4-0.3*coef), -6 + 1.5 * coef, 0);
+        if (direction == 1) {
+            RotateYMat(M, coef * PI / 3);
+        } else {
+            RotateYMat(M, coef * PI / 3.5);
+        }
         struct object3D *o = newCyl(diffPct, reflPct, tranPct, 1, 1, 1, refl_sig, r_index);
         memcpy(o->T, M, 16 * sizeof(double));
         Translate(o, 0, 0, 5.5);
@@ -129,6 +133,19 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
         loadTexture(o, "./texture/ncyl2.ppm", 2, &texture_list);
         invert(&o->T[0][0], &o->Tinv[0][0]);
         insertObject(o, &object_list);
+
+        struct object3D *hat = newSphere(0, 1, 0, drand48(), drand48(), drand48(), refl_sig, r_index);
+        Scale(hat, .6, .6, .6);
+        Translate(hat, 2 * direction * (4-0.3*coef), -6 + 1.5 * coef, 0);
+        if (direction == 1) {
+            RotateY(hat, coef * PI / 3);
+        } else {
+            RotateY(hat, coef * PI / 3.5);
+        }
+        Translate(hat, 0, 0, 5.5);
+        invert(&hat->T[0][0], &hat->Tinv[0][0]);
+        insertObject(hat, &object_list);
+
         hierarchical_cyl(depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
     }
 }
