@@ -148,7 +148,7 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
         invert(&hat->T[0][0], &hat->Tinv[0][0]);
         insertObject(hat, &object_list);
 
-        hierarchical_circ(ref, depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
+        hierarchical_circ(ref, 2 * depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
         hierarchical_cyl(depth - 1, diffPct, reflPct, tranPct, refl_sig, r_index, direction);
     }
 }
@@ -159,7 +159,7 @@ void hierarchical_circ(double ref[4][4], double depth, double diffPct, double re
         double coef = (8 - depth);
         struct object3D *o = newSphere(0, 1, 0, drand48(), drand48(), drand48(), refl_sig, r_index);
         Scale(o, .25, .25, .25);
-        Translate(o, direction * (2 - 0.4 * coef), .7, 0);
+        Translate(o, direction * (2 - 0.2 * coef), .7, 0);
         RotateX(o, coef * PI / 3 );
         matMult(ref, o->T);
         Translate(o, 0, 0, 5.5);
