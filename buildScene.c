@@ -64,14 +64,7 @@ void buildScene(void) {
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-
-    o = newSphere(1.0, 0.0, 0.0, .75, .75, .75, .05, 1.4);        // front
-    Scale(o, 500, 500, 500);
-    Translate(o, 0, 0, -515);
-    invert(&o->T[0][0], &o->Tinv[0][0]);
-    insertObject(o, &object_list);
-
-    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .02, 1.4);    // Bottom
+    o = newPlane(1.0, 0.0, 0.0, .8, .8, .8, .02, 1.4);    // Bottom
     Scale(o, 20, 20, 20);
     RotateX(o, PI / 2);
     Translate(o, 0, -10, 10);
@@ -136,7 +129,7 @@ void hierarchical_cyl(double depth, double diffPct, double reflPct, double tranP
         invert(&o->T[0][0], &o->Tinv[0][0]);
         insertObject(o, &object_list);
 
-        struct object3D *hat = newSphere(0, .5, .5, drand48(), drand48(), drand48(), refl_sig, r_index);
+        struct object3D *hat = newSphere(0, 0, 1, drand48(), drand48(), drand48(), refl_sig, r_index);
         Scale(hat, .6, .6, .6);
         Translate(hat, 2 * direction * (4-0.3*coef), -6 + 1.5 * coef, 0);
         if (direction == 1) {
