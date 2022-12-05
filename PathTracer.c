@@ -35,6 +35,7 @@
 
 #define __USE_IS            // Use importance sampling for diffuse materials
 #define __USE_ES            // Use explicit light sampling
+#define __USE_DOF           // Use depth of field
 // #define __DEBUG			// <-- Use this to turn on/off debugging output
 
 // A couple of global structures and data: An object list, a light list, and the
@@ -276,7 +277,7 @@ int main(int argc, char *argv[]) {
     struct point3D g;
     struct point3D up;
     double du, dv;            // Increase along u and v directions for pixel coordinates
-    struct point3D pc, d;        // Point structures to keep the coordinates of a pixel and
+    struct point3D pc, d, p_0;        // Point structures to keep the coordinates of a pixel and
     // the direction or a ray
     struct ray3D ray;        // Structure to keep the ray from e to a pixel
     struct colourRGB col;        // Return colour for pixels
@@ -287,6 +288,8 @@ int main(int argc, char *argv[]) {
     struct object3D *obj;        // Will need this to process lightsource weights
     double *wght;            // Holds weights for each pixel - to provide log response
     double pct, wt;
+    double aperture_size = 1;
+    double focus_dis = 20;
 
     time_t t1, t2;
     FILE *f;
@@ -407,6 +410,56 @@ int main(int argc, char *argv[]) {
         for (j = 0; j < sx; j++)        // For each of the pixels in the image
         {
             for (i = 0; i < sx; i++) {
+#ifdef __USE_DOF
+                // the pixel center
+                pc.px = cam->wl + i * du;
+                pc.py = cam->wt + j * dv;
+                pc.pz = cam->f;
+                pc.pw = 1;
+
+                double theta = 2 * PI * drand48();
+                memcpy(&p_0, &pc, sizeof(struct point3D));
+                p_0.px += cos(theta);
+                p_0.py += sin(theta);
+
+                // Convert image plane sample coordinates to world coordinates
+                matVecMult(cam->C2W, &pc);
+                matVecMult(cam->C2W, &p_0);
+
+                // Now compute the ray direction
+                // Cast a ray through the pixel center and the projection center
+                struct point3D *d_0 = newPoint(pc.px, pc.py, pc.pz);
+                subVectors(&cam->e, d_0);
+                normalize(d_0);
+                struct ray3D *r_0 = newRay(&pc, d_0);
+
+                // Compute the intersection point p_d with the prefect focus along the optical axis
+                struct point3D *fp = newPoint(0, 0, -20);
+                matVecMult(cam->C2W,fp);
+//                if (fp->pz != 5) {
+//                    fprintf(stderr, "Panic, should be %f\n", fp->pz);
+//                    exit(1);
+//                }
+                struct point3D fpc;
+                memcpy(&fpc,fp,sizeof(struct point3D));
+                subVectors(&pc, &fpc); // fpc = fp - c
+                double lambda = dot(&fpc, &cam->w)/dot(d_0, &cam->w);
+                struct point3D p_d;
+                r_0->rayPos(r_0, lambda, &p_d);
+
+                // Form direction as: intersection - lp
+                d.px = p_d.px - p_0.px;
+                d.py = p_d.py - p_0.py;
+                d.pz = p_d.pz - p_0.pz;
+                d.pw = 1;
+                normalize(&d);
+
+                // Create a ray and do the raytracing for this pixel.
+                initRay(&ray, &p_0, &d, 1);
+                free(fp);
+                free(d_0);
+                free(r_0);
+#else
                 // Random sample within the pixel's area
                 pc.px = (cam->wl + ((i + (drand48() - .5)) * du));
                 pc.py = (cam->wt + ((j + (drand48() - .5)) * dv));
@@ -424,6 +477,7 @@ int main(int argc, char *argv[]) {
                 // Create a ray and do the raytracing for this pixel.
                 initRay(&ray, &pc, &d, 1);
 
+#endif
                 wt = *(wght + i + (j * sx));
                 PathTrace(&ray, 1, &col, NULL, 0);
                 (*(rgbIm + ((i + (j * sx)) * 3) + 0)) += col.R * pow(2, -log(wt));
