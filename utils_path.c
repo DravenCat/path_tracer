@@ -468,10 +468,10 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, st
             free(tangent);
         }
 
-        // transfer intersection point to specific coordinate
+        // get the actual intersection point
         (r->rayPos)(r, *lambda, p);
 
-        // transfer cylinder's normal to specific coordinate
+        // get the actual normal
         normalTransform(&model, n, cylinder);
     }
 }
