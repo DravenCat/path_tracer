@@ -37,37 +37,37 @@ void buildScene(void) {
     struct point3D p;
 
     // Cornell box
-    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .02, 1.4);    // Left
-    Scale(o, 20, 20, 20);
+    o = newPlane(1.0, 0.0, 0.0, .85, .75, .75, .05, 1.4);    // Left
+    Scale(o, 21, 20.5, 20);
     RotateY(o, PI / 2);
-    Translate(o, -14, 0, 10);
+    Translate(o, -14, .25, 10);
     loadTexture(o, "./texture/wall.ppm", 1, &texture_list);
     loadTexture(o, "./texture/nwall.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
-    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .02, 1.4);    // Right
-    Scale(o, 20, 20, 20);
+    o = newPlane(1.0, 0.0, 0.0, .75, .75, .85, .05, 1.4);    // Right
+    Scale(o, 21, 20.5, 20);
     RotateY(o, PI / 2);
-    Translate(o, 14, 0, 10);
+    Translate(o, 14, .25, 10);
     loadTexture(o, "./texture/wall.ppm", 1, &texture_list);
     loadTexture(o, "./texture/nwall.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
 
-    o = newPlane(1.0, 0.0, 0.0, .75, .75, .75, .05, 1.4);        // Back
-    Scale(o, 15, 12, 12);
+    o = newPlane(1.0, 0.0, 0.0, .75, .85, .75, .05, 1.4);        // Back
+    Scale(o, 15.5, 11.5, 11.5);
     RotateZ(o, PI);
-    Translate(o, 0, 0, 20);
+    Translate(o, 0, .25, 20);
     loadTexture(o, "./texture/back.ppm", 1, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     insertObject(o, &object_list);
 
     o = newPlane(1.0, 0.0, 0.0, .8, .8, .8, .02, 1.4);    // Bottom
-    Scale(o, 20, 20, 20);
+    Scale(o, 21, 21, 20.5);
     RotateX(o, PI / 2);
-    Translate(o, 0, -10, 10);
+    Translate(o, .25, -10.5, 10);
     loadTexture(o, "./texture/ground.ppm", 1, &texture_list);
     loadTexture(o, "./texture/nground.ppm", 2, &texture_list);
     invert(&o->T[0][0], &o->Tinv[0][0]);
@@ -80,7 +80,7 @@ void buildScene(void) {
     insertObject(o, &object_list);
 
     // tree
-    o = newCyl(1.0, 0.0, 0.0, 1, 1, 1, .01, 1.54);
+    o = newCyl(1.0, 0.0, 0.0, 1, 1, 1, .01, 1.4);
     Scale(o, 1, 1, 20);
     RotateX(o, PI / 2);
     Translate(o, 0, -2, 5.5);
@@ -95,9 +95,9 @@ void buildScene(void) {
 
     // Planar light source at top
     o = newPlane(1.00, 0.00, 0.0, 1.0, 1.0, 1.0, 0.0, 1.54);
-    Scale(o, 2, 8, 3);
+    Scale(o, 3, 8.5, 1);
     RotateX(o, PI / 2);
-    Translate(o, 0, 10, 9);
+    Translate(o, 0, 9.995, 9.25);
     invert(&o->T[0][0], &o->Tinv[0][0]);
     o->isLightSource = 1;
     insertObject(o, &object_list);
