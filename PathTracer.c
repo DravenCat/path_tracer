@@ -309,6 +309,7 @@ int main(int argc, char *argv[]) {
     num_samples = atoi(argv[3]);
     strcpy(&output_name[0], argv[4]);
     LS_LIST = 0;
+    if (argc == 6) num_dof = atoi(argv[5]);
 
     fprintf(stderr, "Rendering image at %d x %d\n", sx, sx);
     fprintf(stderr, "Recursion depth = %d\n", MAX_DEPTH);
