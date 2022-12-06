@@ -441,14 +441,12 @@ int main(int argc, char *argv[]) {
                 struct point3D p_d;
                 r_0->rayPos(r_0, lambda, &p_d);
 
-                // Form direction as: intersection - lp
+                // Create the ray with the direction intersection - p_0 and do the raytracing for this pixel.
                 d.px = p_d.px - p_0.px;
                 d.py = p_d.py - p_0.py;
                 d.pz = p_d.pz - p_0.pz;
                 d.pw = 1;
                 normalize(&d);
-
-                // Create a ray and do the raytracing for this pixel.
                 initRay(&ray, &p_0, &d, 1);
                 free(perf_focal);
                 free(d_0);
