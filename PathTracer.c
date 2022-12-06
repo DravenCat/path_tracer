@@ -290,6 +290,7 @@ int main(int argc, char *argv[]) {
     double pct, wt;
     double aperture_size = 1;
     double focus_dis = 20;
+    int num_dof = 1;
 
     time_t t1, t2;
     FILE *f;
@@ -411,6 +412,9 @@ int main(int argc, char *argv[]) {
         {
             for (i = 0; i < sx; i++) {
 #ifdef __USE_DOF
+                col.R = 0;
+                col.G = 0;
+                col.B = 0;
                 // the pixel center
                 pc.px = cam->wl + i * du;
                 pc.py = cam->wt + j * dv;
@@ -440,11 +444,18 @@ int main(int argc, char *argv[]) {
                 free(d_0);
                 free(r_0);
 
-                {
+                for (int l = 0; l < num_dof; ++l) {
+                    struct colourRGB tmp_col;
+                    tmp_col.R = 0;
+                    tmp_col.G = 0;
+                    tmp_col.B = 0;
+
+                    // get a point on the aperture
                     double theta = 2 * PI * drand48();
                     p_0.px += cos(theta);
                     p_0.py += sin(theta);
                     matVecMult(cam->C2W, &p_0);
+
                     // Create the ray with the direction intersection - p_0 and do the raytracing for this pixel.
                     d.px = p_d.px - p_0.px;
                     d.py = p_d.py - p_0.py;
@@ -453,7 +464,14 @@ int main(int argc, char *argv[]) {
                     normalize(&d);
                     initRay(&ray, &p_0, &d, 1);
                     PathTrace(&ray, 1, &col, NULL, 0);
+                    col.R += tmp_col.R;
+                    col.G += tmp_col.G;
+                    col.B += tmp_col.B;
                 }
+
+                col.R /= num_dof;
+                col.G /= num_dof;
+                col.B /= num_dof;
 #else
                 // Random sample within the pixel's area
                 pc.px = (cam->wl + ((i + (drand48() - .5)) * du));
