@@ -417,14 +417,10 @@ int main(int argc, char *argv[]) {
                 pc.pz = cam->f;
                 pc.pw = 1;
 
-                double theta = 2 * PI * drand48();
                 memcpy(&p_0, &pc, sizeof(struct point3D));
-                p_0.px += cos(theta);
-                p_0.py += sin(theta);
 
                 // Convert image plane sample coordinates to world coordinates
                 matVecMult(cam->C2W, &pc);
-                matVecMult(cam->C2W, &p_0);
 
                 // Now compute the ray direction
                 // Cast a ray through the pixel center and the projection center
@@ -440,17 +436,24 @@ int main(int argc, char *argv[]) {
                 double lambda = dot(perf_focal, &cam->w) / dot(d_0, &cam->w);
                 struct point3D p_d;
                 r_0->rayPos(r_0, lambda, &p_d);
-
-                // Create the ray with the direction intersection - p_0 and do the raytracing for this pixel.
-                d.px = p_d.px - p_0.px;
-                d.py = p_d.py - p_0.py;
-                d.pz = p_d.pz - p_0.pz;
-                d.pw = 1;
-                normalize(&d);
-                initRay(&ray, &p_0, &d, 1);
                 free(perf_focal);
                 free(d_0);
                 free(r_0);
+
+                {
+                    double theta = 2 * PI * drand48();
+                    p_0.px += cos(theta);
+                    p_0.py += sin(theta);
+                    matVecMult(cam->C2W, &p_0);
+                    // Create the ray with the direction intersection - p_0 and do the raytracing for this pixel.
+                    d.px = p_d.px - p_0.px;
+                    d.py = p_d.py - p_0.py;
+                    d.pz = p_d.pz - p_0.pz;
+                    d.pw = 1;
+                    normalize(&d);
+                    initRay(&ray, &p_0, &d, 1);
+                    PathTrace(&ray, 1, &col, NULL, 0);
+                }
 #else
                 // Random sample within the pixel's area
                 pc.px = (cam->wl + ((i + (drand48() - .5)) * du));
@@ -468,10 +471,9 @@ int main(int argc, char *argv[]) {
 
                 // Create a ray and do the raytracing for this pixel.
                 initRay(&ray, &pc, &d, 1);
-
+                PathTrace(&ray, 1, &col, NULL, 0);
 #endif
                 wt = *(wght + i + (j * sx));
-                PathTrace(&ray, 1, &col, NULL, 0);
                 (*(rgbIm + ((i + (j * sx)) * 3) + 0)) += col.R * pow(2, -log(wt));
                 (*(rgbIm + ((i + (j * sx)) * 3) + 1)) += col.G * pow(2, -log(wt));
                 (*(rgbIm + ((i + (j * sx)) * 3) + 2)) += col.B * pow(2, -log(wt));
